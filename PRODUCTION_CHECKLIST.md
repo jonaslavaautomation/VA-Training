@@ -1,0 +1,50 @@
+# Production Checklist — VA Training Academy
+
+Tick every box before telling members the portal is live.
+Each item links to the step that explains it ([DEPLOYMENT_GUIDE.md](DEPLOYMENT_GUIDE.md) = DG).
+
+## Before deployment
+- [ ] **Backup taken** of the existing database (`pg_dump` file saved somewhere safe) — DG §2. *Skip only for a brand-new project.*
+- [ ] Storage files backed up or originals kept — DG §2b
+- [ ] `npm run test:db` passes locally (158 checks)
+- [ ] `npm run build` succeeds locally
+
+## Supabase
+- [ ] All 6 migrations applied (`npx supabase migration list` shows them all) — DG §3
+- [ ] 7 tables present; 4 storage buckets present and **Private**
+- [ ] Edge Function `admin-members` deployed (latest version) — DG §4
+- [ ] Function secrets `SITE_URL` and `ALLOWED_ORIGINS` set to the **live domain** — DG §4/§9
+- [ ] **Allow new users to sign up = OFF** — DG §5
+- [ ] Password requirements: minimum 8, letters + digits — DG §5
+- [ ] Custom **SMTP** configured, and a test email received — DG §5
+- [ ] Invite + Reset password email templates updated — DG §5
+- [ ] Storage upload limit set; `VITE_MAX_UPLOAD_MB` matches — DG §5
+- [ ] Site URL + Redirect URL (`/reset-password`) set to the live domain — DG §9
+- [ ] First administrator created with `bootstrap_first_admin` — DG §6
+- [ ] *(Recommended)* Second administrator account for emergencies (promote via SQL Editor)
+
+## Netlify
+- [ ] Repository connected; build command `npm run build`, publish `dist` — DG §8
+- [ ] Environment variables set: `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `VITE_MAX_UPLOAD_MB` — DG §8
+- [ ] **No** service-role / secret key in any Netlify variable
+- [ ] Site loads the sign-in page (not "portal isn't available")
+- [ ] HTTPS active (padlock icon); custom domain configured if used
+- [ ] If Supabase uses a custom domain, it's added to the CSP in `netlify.toml`
+
+## Live verification (DG §10)
+- [ ] Admin login works
+- [ ] Direct link + refresh on `/admin/members` and `/library` works
+- [ ] Invitation email → set password → member login works
+- [ ] Forgot password email → reset works
+- [ ] Published PDF opens and video plays for a member; a draft is not visible
+- [ ] Deactivated member is blocked; after reactivation their progress is intact
+- [ ] Member is redirected away from `/admin`
+- [ ] Phone test: login, bottom tabs, video, PDF
+- [ ] securityheaders.com scan shows the security headers
+- [ ] Full acceptance test in [TEST_RESULTS.md §4](TEST_RESULTS.md) repeated on the live site, with results recorded
+
+## After launch
+- [ ] Monitor Supabase usage (Dashboard → Usage): storage and **egress** (video bandwidth)
+- [ ] Weekly: glance at Admin → Activity Logs
+- [ ] Monthly: take a `pg_dump` backup — DG §2
+- [ ] Monthly: Admin → Training Resources → remove "unused files" if the notice appears

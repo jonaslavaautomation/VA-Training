@@ -1,0 +1,45 @@
+# Netlify configuration for VA Training Academy (Vite + React SPA).
+# Docs: DEPLOYMENT_GUIDE.md
+
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+[build.environment]
+  # Vite 8 requires Node 20.19+ or 22.12+.
+  NODE_VERSION = "22"
+
+# Single-page app: every unknown path serves index.html so direct links and
+# page refreshes (e.g. /library/123, /admin/members) work. Real files such as
+# /assets/*.js are served normally because Netlify checks for files first.
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    # Content-Security-Policy: only this site and your Supabase project may be contacted.
+    # If you use a Supabase CUSTOM DOMAIN, add it next to https://*.supabase.co (see DEPLOYMENT_GUIDE.md).
+    Content-Security-Policy = "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.supabase.co; media-src 'self' blob: https://*.supabase.co; connect-src 'self' https://*.supabase.co wss://*.supabase.co; font-src 'self' data:; worker-src 'self' blob:; object-src 'none'; frame-src 'none'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests"
+    Strict-Transport-Security = "max-age=31536000; includeSubDomains"
+    X-Frame-Options = "DENY"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Permissions-Policy = "camera=(), microphone=(), geolocation=(), payment=(), usb=()"
+    Cross-Origin-Opener-Policy = "same-origin"
+    # Private portal: keep it out of search engines.
+    X-Robots-Tag = "noindex, nofollow"
+
+# Fingerprinted build assets never change — cache them for a year.
+[[headers]]
+  for = "/assets/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+# Always revalidate the app shell so new deploys are picked up immediately.
+[[headers]]
+  for = "/index.html"
+  [headers.values]
+    Cache-Control = "no-cache"

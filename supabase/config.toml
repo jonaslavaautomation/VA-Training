@@ -1,0 +1,18 @@
+# Supabase CLI project config. Values under [auth] apply to the LOCAL dev
+# stack only — configure the hosted project in the Dashboard (see supabase/README.md).
+project_id = "va-training-academy"
+
+[auth]
+site_url = "http://localhost:5173"
+additional_redirect_urls = ["http://localhost:5173/reset-password"]
+# No public registration: only admins create accounts (via the admin-members function).
+enable_signup = false
+
+[auth.email]
+enable_signup = false
+
+[functions.admin-members]
+# The function verifies the caller's token itself with auth.getUser() and then
+# checks profiles.role/status, so it works with both legacy JWT keys and the
+# newer publishable/secret API keys.
+verify_jwt = false

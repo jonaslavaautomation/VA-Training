@@ -1,0 +1,13 @@
+node_modules
+dist
+.env
+.env.*
+!.env.example
+.vercel
+.netlify
+*.log
+.DS_Store
+tests/e2e/.out
+backups
+supabase/.temp
+supabase/.branches
