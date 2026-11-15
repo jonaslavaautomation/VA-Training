@@ -1,13 +1,13 @@
 // Production acceptance test — run with `npm run test:e2e` (needs Google Chrome installed).
 // Simulated Supabase backend; nothing touches your real project.
-// PRODUCTION build (vite build) served like Netlify (netlify.toml headers + CSP
-// + SPA redirect) against the simulated Supabase backend, in headless Chrome.
+// PRODUCTION build (vite build) served like Vercel (vercel.json headers + CSP
+// + SPA rewrite) against the simulated Supabase backend, in headless Chrome.
 import { spawnSync } from 'node:child_process'
 import { randomUUID } from 'node:crypto'
 import { writeFileSync } from 'node:fs'
 import { chromium } from 'playwright-core'
 import { addUser, start, state } from './fake-supabase.mjs'
-import { startNetlifySim } from './netlify-sim.mjs'
+import { startHostingSim } from './hosting-sim.mjs'
 
 const APP = process.argv[2] ?? new URL('../..', import.meta.url).pathname.replace(/\/$/, '')
 const API_PORT = 54394
@@ -36,7 +36,7 @@ function makePdf(text) {
 }
 
 await start(API_PORT)
-await startNetlifySim({ dist: DIST, toml: `${APP}/netlify.toml`, port: WEB_PORT, apiOrigin: API })
+await startHostingSim({ dist: DIST, config: `${APP}/vercel.json`, port: WEB_PORT, apiOrigin: API })
 const adminId = addUser('admin@academy.test', 'Admin123!', { role: 'admin', first: 'Olive', last: 'Owner', lastSignIn: new Date().toISOString() })
 const cat = { id: randomUUID(), name: 'Getting Started', slug: 'getting-started', description: null, icon: null, color: null, is_visible: true, created_at: new Date().toISOString(), updated_at: new Date().toISOString() }
 state.categories.push(cat)
@@ -242,7 +242,7 @@ try {
     const a = await fetch(`${BASE}${asset}`)
     assert(a.headers.get('cache-control')?.includes('immutable'), 'assets not cached immutably')
   })
-  await step('E2', 'Direct navigation / refresh on deep links works (SPA redirect)', async () => {
+  await step('E2', 'Direct navigation / refresh on deep links works (SPA rewrite)', async () => {
     for (const p of [`/library/${pdfId()}`, '/my-learning', '/favorites', '/profile']) {
       await member.goto(`${BASE}${p}`); await member.locator('main').waitFor(); assert(new URL(member.url()).pathname === p, `landed on ${member.url()}`)
     }

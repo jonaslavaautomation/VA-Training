@@ -6,14 +6,15 @@ Each item links to the step that explains it ([DEPLOYMENT_GUIDE.md](DEPLOYMENT_G
 ## Before deployment
 - [ ] **Backup taken** of the existing database (`pg_dump` file saved somewhere safe) — DG §2. *Skip only for a brand-new project.*
 - [ ] Storage files backed up or originals kept — DG §2b
-- [ ] `npm run test:db` passes locally (158 checks)
+- [ ] `npm run test:db` passes locally (167 checks)
 - [ ] `npm run build` succeeds locally
 
 ## Supabase
-- [ ] All 6 migrations applied (`npx supabase migration list` shows them all) — DG §3
+- [ ] All 7 migrations applied (`npx supabase migration list` shows them all) — DG §3
 - [ ] 7 tables present; 4 storage buckets present and **Private**
 - [ ] Edge Function `admin-members` deployed (latest version) — DG §4
 - [ ] Function secrets `SITE_URL` and `ALLOWED_ORIGINS` set to the **live domain** — DG §4/§9
+- [ ] *(Login alerts)* `login_alerts.sql` run, `login-alert` deployed with its secrets, and a member test sign-in emailed you — DG §4b
 - [ ] **Allow new users to sign up = OFF** — DG §5
 - [ ] Password requirements: minimum 8, letters + digits — DG §5
 - [ ] Custom **SMTP** configured, and a test email received — DG §5
@@ -23,13 +24,13 @@ Each item links to the step that explains it ([DEPLOYMENT_GUIDE.md](DEPLOYMENT_G
 - [ ] First administrator created with `bootstrap_first_admin` — DG §6
 - [ ] *(Recommended)* Second administrator account for emergencies (promote via SQL Editor)
 
-## Netlify
-- [ ] Repository connected; build command `npm run build`, publish `dist` — DG §8
-- [ ] Environment variables set: `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `VITE_MAX_UPLOAD_MB` — DG §8
-- [ ] **No** service-role / secret key in any Netlify variable
+## Vercel
+- [ ] Repository imported in Vercel; framework Vite, build `npm run build`, output `dist` — DG §8
+- [ ] Environment variables set (Production + Preview): `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `VITE_MAX_UPLOAD_MB`, then **redeployed** — DG §8
+- [ ] **No** service-role / secret key in any Vercel environment variable
 - [ ] Site loads the sign-in page (not "portal isn't available")
 - [ ] HTTPS active (padlock icon); custom domain configured if used
-- [ ] If Supabase uses a custom domain, it's added to the CSP in `netlify.toml`
+- [ ] If Supabase uses a custom domain, it's added to the CSP in `vercel.json`
 
 ## Live verification (DG §10)
 - [ ] Admin login works

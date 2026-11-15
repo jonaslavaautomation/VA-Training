@@ -1,6 +1,5 @@
 import { createContext, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import * as authService from '@/services/authService'
-import { logActivity } from '@/services/activityService'
 import { isPreviewMode, isSupabaseConfigured } from '@/lib/supabase'
 import { fullName } from '@/lib/format'
 
@@ -117,9 +116,8 @@ export function AuthProvider({ children }) {
       throw new Error('Sign-in needs a connected Supabase project. Add your keys to .env.local, or use the preview buttons below to explore the interface.')
     }
     setSessionExpired(false)
-    const data = await authService.signInWithPassword(email, password, remember)
-    logActivity('signed_in')
-    return data
+    // The sign-in itself is recorded server-side (activity log + admin alert) by a database trigger.
+    return authService.signInWithPassword(email, password, remember)
   }, [])
 
   const signOut = useCallback(async () => {

@@ -219,6 +219,7 @@ export function start(port) {
       if (!u || u.password !== body.password) return send(res, 400, { code: 400, error_code: 'invalid_credentials', msg: 'Invalid login credentials' })
       if (u.banned) return send(res, 400, { code: 400, error_code: 'user_banned', msg: 'User is banned' })
       state.authInfo.get(u.id).last_sign_in_at = now()
+      log(u.id, 'signed_in') // emulates the on_auth_user_signed_in trigger (server-side sign-in record)
       return send(res, 200, issue(u.id))
     }
     if (path === '/auth/v1/token') { const id = state.refresh.get(body?.refresh_token); return id ? send(res, 200, issue(id)) : send(res, 400, { error_code: 'refresh_token_not_found', msg: 'Invalid Refresh Token' }) }
@@ -234,6 +235,8 @@ export function start(port) {
       const id = state.otps.get(body.token_hash)
       if (!id || !body.token_hash.startsWith(`${body.type}-`)) return send(res, 403, { code: 403, error_code: 'otp_expired', msg: 'Email link is invalid or has expired' })
       state.otps.delete(body.token_hash) // single use
+      state.authInfo.get(id).last_sign_in_at = now()
+      log(id, 'signed_in')
       return send(res, 200, issue(id))
     }
 
@@ -454,7 +457,7 @@ export function start(port) {
     }
     if (table === 'activity_logs') {
       if (req.method === 'POST') {
-        const member = ['signed_in', 'viewed', 'watched', 'downloaded', 'completed', 'favorited']
+        const member = ['viewed', 'watched', 'downloaded', 'completed', 'favorited'] // 'signed_in' is server-only
         if (!isActive(uid) || !member.includes(body.activity_type) || body.target_type || body.details) return rls(res)
         log(uid, body.activity_type, null, null, null, null, body.resource_id ?? null)
         return send(res, 201, undefined)

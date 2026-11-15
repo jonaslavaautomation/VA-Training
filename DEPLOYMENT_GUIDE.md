@@ -14,7 +14,7 @@ It assumes no deployment experience. Go in order; each step says how to check it
 5. [Configure Supabase Auth, email and storage](#5-configure-supabase-auth-email-and-storage)
 6. [Create the first administrator](#6-create-the-first-administrator)
 7. [Put the code in a Git repository](#7-put-the-code-in-a-git-repository)
-8. [Connect the repository to Netlify](#8-connect-the-repository-to-netlify)
+8. [Connect the repository to Vercel](#8-connect-the-repository-to-vercel)
 9. [Tell Supabase your live website address](#9-tell-supabase-your-live-website-address)
 10. [Verify the live site](#10-verify-the-live-site)
 11. [If something goes wrong (rollback)](#11-if-something-goes-wrong-rollback)
@@ -27,7 +27,7 @@ It assumes no deployment experience. Go in order; each step says how to check it
 | Item | Where |
 |---|---|
 | A Supabase project | <https://supabase.com/dashboard> |
-| A Netlify account | <https://app.netlify.com> |
+| A Vercel account | <https://vercel.com> |
 | A GitHub, GitLab or Bitbucket account | to hold the code |
 | Node.js 20.19+ or 22.12+ on your computer | <https://nodejs.org> (choose "LTS") |
 | A custom SMTP email provider (recommended) | e.g. Resend, Postmark, SendGrid, Amazon SES |
@@ -73,7 +73,7 @@ Backups contain member emails and account data, so treat them as confidential. K
 
 ## 3. Set up the Supabase database
 
-The database is created by 6 migration files in `supabase/migrations/`. They run **in filename order**:
+The database is created by 7 migration files in `supabase/migrations/`. They run **in filename order**:
 
 | # | File | What it does | Changes existing data? |
 |---|---|---|---|
@@ -83,6 +83,7 @@ The database is created by 6 migration files in `supabase/migrations/`. They run
 | 4 | `20261115100000_training_storage.sql` | Private storage buckets and file rules | No |
 | 5 | `20261116100000_learning_progress_resume.sql` | Video resume columns | No (adds columns, default 0) |
 | 6 | `20261117100000_admin_management.sql` | Contact numbers, category visibility, announcements, audit log | Converts `announcements.published` → `status`, then removes the old column |
+| 7 | `20261118100000_login_alerts.sql` | Server-side sign-in log + member login alert emails | No (adds a trigger and a function) |
 
 None of them delete members, progress, favorites, resources or files.
 
@@ -113,10 +114,35 @@ npx supabase secrets set \
 npx supabase functions deploy admin-members
 ```
 
-- Use your Netlify address (e.g. `https://<your-site-name>.netlify.app`) until you have a custom domain. Update both secrets later if the domain changes.
+- Use your Vercel production address (e.g. `https://<project-name>.vercel.app`) until you have a custom domain. Update both secrets later if the domain changes.
 - During local development you can add `http://localhost:5173` to `ALLOWED_ORIGINS`, separated by a comma.
 
 **Check:** Dashboard → **Edge Functions** lists `admin-members`.
+
+### 4b. Login alert emails (member sign-ins → your inbox)
+
+Every time a **member** signs in, an email goes to the administrator saying who signed in, when, and from which device, with a link to their profile. Administrators' own sign-ins aren't emailed. **Every** sign-in is also listed under Admin → Activity Logs → *Member activity → Signed in*.
+
+1. **Create a free Resend account** at <https://resend.com>, ideally using the address that should receive the alerts (e.g. jonasrosauro122@gmail.com). Then go to **API Keys → Create API key** and copy it (`re_…`).
+   - Resend's built-in sender (`onboarding@resend.dev`) can only email the **Resend account owner's** address. To send to any other address, or from your own domain, verify the domain under **Domains** in Resend.
+2. **Store the function address and a secret in your database.** Open [supabase/setup/login_alerts.sql](supabase/setup/login_alerts.sql) and replace `YOUR-PROJECT-REF`. Paste it into **SQL Editor** and click **Run**. The last result row shows a long random value; copy it.
+3. **Give the function its secrets and deploy it** (terminal, in the project folder):
+   ```bash
+   npx supabase secrets set \
+     LOGIN_ALERT_SECRET=<value from step 2> \
+     RESEND_API_KEY=<your re_… key> \
+     ALERT_TO=jonasrosauro122@gmail.com \
+     ALERT_TIMEZONE=<your time zone, e.g. Asia/Manila>
+   npx supabase functions deploy login-alert
+   ```
+   Optional: `ALERT_FROM="VA Training Academy <alerts@your-domain>"` once your domain is verified in Resend. `SITE_URL` (from step 4) adds a "View member" link to the email.
+4. **Test it:** sign in on the site as a **member** (not an admin). The email arrives within a few seconds. Check spam the first time and mark it "Not spam".
+   - **No email?** Dashboard → Edge Functions → `login-alert` → **Logs**. Then check Database → Extensions: `pg_net` must be enabled.
+
+**Turn alerts off** (sign-ins are still logged): in the SQL Editor run
+`delete from vault.secrets where name in ('login_alert_url', 'login_alert_secret');`
+
+Alerts can never block a sign-in: if email sending fails, the member still gets in and the problem shows in the function logs.
 
 ---
 
@@ -135,7 +161,7 @@ Dashboard → **Authentication**:
 
 Dashboard → **Storage → Settings → Upload file size limit**:
 - **Free plan:** 50 MB, which is the maximum, so videos must be 50 MB or smaller.
-- **Paid plan:** raise it, e.g. to 2 GB, then set the same value as `VITE_MAX_UPLOAD_MB` in Netlify (step 8).
+- **Paid plan:** raise it, e.g. to 2 GB, then set the same value as `VITE_MAX_UPLOAD_MB` in Vercel (step 8).
 
 ---
 
@@ -175,14 +201,15 @@ git push -u origin main
 
 ---
 
-## 8. Connect the repository to Netlify
+## 8. Connect the repository to Vercel
 
-1. Netlify → **Add new site → Import an existing project** → choose your Git provider → pick the repository.
-2. Build settings. Netlify reads them from `netlify.toml`; confirm they show:
-   - **Build command:** `npm run build`
-   - **Publish directory:** `dist`
-   - Node version: 22 (set in `netlify.toml`)
-3. **Environment variables.** Under "Add environment variables", or later under Site configuration → Environment variables:
+1. Go to <https://vercel.com> → **Add New… → Project**, then **Import** your GitHub repository. Allow Vercel access to the repo if asked.
+2. **Build settings.** Vercel reads them from `vercel.json` and detects Vite automatically; confirm they show:
+   - **Framework Preset:** Vite
+   - **Build Command:** `npm run build`
+   - **Output Directory:** `dist`
+   - Node.js version: 22.x (from `"engines"` in `package.json`; you can also check it under Settings → Build and Deployment)
+3. **Environment variables.** Expand "Environment Variables" before the first deploy, or later under **Settings → Environment Variables**. Tick **Production** and **Preview**:
 
    | Key | Value |
    |---|---|
@@ -191,14 +218,16 @@ git push -u origin main
    | `VITE_MAX_UPLOAD_MB` | `50` on Free, or the limit you set in step 5 |
 
    Never add the service-role / secret key here. The app refuses to start if it detects one.
-4. Click **Deploy**. When it finishes, Netlify shows your site address, e.g. `https://<name>.netlify.app`.
-5. *(Optional)* Domain management → add your custom domain. Netlify provides HTTPS automatically.
+4. Click **Deploy**. When it finishes, Vercel shows your address, e.g. `https://<project-name>.vercel.app`.
+5. *(Optional)* **Settings → Domains** → add your custom domain. Vercel provides HTTPS automatically.
 
 **Check:**
 - Opening the address shows the sign-in page.
-- If you see "The portal isn't available right now", the environment variables are missing. Add them, then **Deploys → Trigger deploy → Clear cache and deploy site**.
+- If you see "The portal isn't available right now", the environment variables are missing or were added *after* the build. These values are baked in when the site is built, so after adding or changing them go to **Deployments** → the latest deployment → **⋯ → Redeploy** (untick "Use existing Build Cache").
 
-> **Supabase custom domain?** If your Supabase project uses a custom domain (not `*.supabase.co`), add it to the `Content-Security-Policy` line in `netlify.toml` (`img-src`, `media-src` and `connect-src`) or the browser will block it.
+**Preview deployments:** every branch or pull request gets its own temporary address, like `https://<project>-git-<branch>-<team>.vercel.app`. Sign-in works there, but email links and **Add member** only work on the addresses listed in Supabase (step 9) and in `ALLOWED_ORIGINS`. Use your production address for real work.
+
+> **Supabase custom domain?** If your Supabase project uses a custom domain (not `*.supabase.co`), add it to the `Content-Security-Policy` value in `vercel.json` (`img-src`, `media-src` and `connect-src`) or the browser will block it.
 
 ---
 
@@ -207,6 +236,7 @@ git push -u origin main
 Dashboard → **Authentication → URL Configuration**:
 - **Site URL:** `https://<your-site-domain>`
 - **Redirect URLs:** add `https://<your-site-domain>/reset-password` (keep `http://localhost:5173/reset-password` for local development)
+- *(Optional, preview deployments)* also add `https://*-<your-vercel-team>.vercel.app/reset-password` so email links work on Vercel preview addresses
 
 Also make sure the Edge Function secrets from step 4 (`SITE_URL`, `ALLOWED_ORIGINS`) use the same domain. After changing them, run `npx supabase functions deploy admin-members` again.
 
@@ -217,7 +247,7 @@ Also make sure the Edge Function secrets from step 4 (`SITE_URL`, `ALLOWED_ORIGI
 Do these on the live address, ideally in a private/incognito window:
 
 1. **Sign in** as the admin; you should land on the Admin dashboard.
-2. **Direct links:** paste `https://<your-site-domain>/admin/members` into a new tab and refresh. The page loads, with no "Page not found" from Netlify.
+2. **Direct links:** paste `https://<your-site-domain>/admin/members` into a new tab and refresh. The page loads, with no Vercel "404: NOT_FOUND" page.
 3. **Member invite:** Members → Add member, using an email address you can check. The invitation arrives, the link opens "Set your password", and you land in the portal.
 4. **Password reset:** sign out → "Forgot password?" → the email arrives → set a new password → sign in.
 5. **Private files:**
@@ -225,7 +255,7 @@ Do these on the live address, ideally in a private/incognito window:
    - Right-click the video → "Copy video address", wait over an hour, then open it. It no longer works, because links expire.
    - Unpublish the PDF: the member gets "Resource not found".
 6. **Deactivation:** deactivate the test member. They're signed out and can't sign in. Reactivate, and their progress is still there.
-7. **Security headers:** open <https://securityheaders.com> and scan your site. Expect a high grade; the headers come from `netlify.toml`.
+7. **Security headers:** open <https://securityheaders.com> and scan your site. Expect a high grade; the headers come from `vercel.json`.
 8. **Mobile:** on a phone, sign in, use the bottom tab bar, play a video, and open a PDF. Test portrait and landscape.
 
 Then work through **[PRODUCTION_CHECKLIST.md](PRODUCTION_CHECKLIST.md)** and the full **[docs/SECURITY_CHECKLIST.md](docs/SECURITY_CHECKLIST.md)**.
@@ -236,7 +266,7 @@ Then work through **[PRODUCTION_CHECKLIST.md](PRODUCTION_CHECKLIST.md)** and the
 
 | Problem | What to do |
 |---|---|
-| New website version is broken | Netlify → **Deploys** → click the last good deploy → **Publish deploy**. Instant; no data touched |
+| New website version is broken | Vercel → **Deployments** → open the last good deployment → **⋯ → Promote to Production** (Instant Rollback). Instant; no data touched |
 | Edge Function misbehaving | `git checkout <last-good-commit> -- supabase/functions` then `npx supabase functions deploy admin-members` |
 | A migration failed halfway | Postgres can undo schema changes, and a file pasted into the SQL Editor runs as one unit, so a failed file normally leaves nothing half-applied. Run `npx supabase migration list` to see whether it was recorded. Read the error, fix the cause (see README Troubleshooting), run it again. If unsure, restore the backup into a new project to compare |
 | A migration applied but data looks wrong | **Restore your backup into a NEW Supabase project first** to inspect it: `pg_restore --no-owner --dbname "<new-project-connection-string>" backups/<file>.dump`. Only restore over production once you're sure, ideally with help |
@@ -250,6 +280,6 @@ The Phase 5 migration (#6) removes the old `announcements.published` column afte
 
 1. Make and test changes locally (`npm run dev`, `npm run test:db`, `npm run build`).
 2. Back up (section 2) if the change includes a new migration.
-3. `git commit` and `git push`. Netlify rebuilds and publishes automatically.
+3. `git commit` and `git push`. Vercel rebuilds and publishes automatically (pushes to `main` go to production).
 4. New migration? `npx supabase db push`. Edge Function changed? `npx supabase functions deploy admin-members`.
 5. Re-run the quick checks in section 10.

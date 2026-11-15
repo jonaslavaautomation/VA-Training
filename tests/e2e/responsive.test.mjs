@@ -4,7 +4,7 @@ import { existsSync, mkdirSync } from 'node:fs'
 import { spawnSync } from 'node:child_process'
 import { chromium } from 'playwright-core'
 import { addUser, start, state } from './fake-supabase.mjs'
-import { startNetlifySim } from './netlify-sim.mjs'
+import { startHostingSim } from './hosting-sim.mjs'
 
 const APP = process.argv[2] ?? new URL('../..', import.meta.url).pathname.replace(/\/$/, '')
 const API = 'http://127.0.0.1:54394'
@@ -28,7 +28,7 @@ if (!existsSync(DIST)) {
   if (b.status !== 0) { console.error(b.stderr || b.stdout); process.exit(1) }
 }
 await start(54394)
-await startNetlifySim({ dist: new URL('./.out/dist-prod', import.meta.url).pathname, toml: `${APP}/netlify.toml`, port: 5192, apiOrigin: API })
+await startHostingSim({ dist: new URL('./.out/dist-prod', import.meta.url).pathname, config: `${APP}/vercel.json`, port: 5192, apiOrigin: API })
 addUser('admin@academy.test', 'Admin123!', { role: 'admin', first: 'Olive', last: 'Owner-Fitzgerald' })
 const memberId = addUser('maria.santos.with.a.long.email@academy-training.test', 'Member123!', { first: 'Maria Isabella', last: 'Santos de la Cruz', phone: '+63 917 555 0101', lastSignIn: new Date().toISOString() })
 for (let i = 0; i < 8; i++) addUser(`trainee${i}@academy.test`, null, { first: 'Trainee', last: `Number ${i}` })

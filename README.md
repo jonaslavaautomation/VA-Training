@@ -29,7 +29,8 @@ Administrators create member accounts and upload training PDFs and videos. Membe
 - **Training Resources:** edit, publish/unpublish, replace file, delete.
 - **Categories:** create, rename, hide, safe delete.
 - **Announcements:** draft, publish, schedule, archive.
-- **Activity Logs:** a record of who did what.
+- **Activity Logs:** a record of who did what, including every sign-in (recorded by the server).
+- **Login alerts:** an email to the administrator whenever a member signs in (who, when, device).
 
 **Security:**
 - Every rule is enforced by the database (Row Level Security), not just by hiding buttons.
@@ -43,7 +44,7 @@ Administrators create member accounts and upload training PDFs and videos. Membe
 | Website | React 18 + Vite, Tailwind CSS, React Router |
 | Login, database, file storage | Supabase (Auth, PostgreSQL with Row Level Security, Storage, Edge Functions) |
 | PDF viewing / big uploads | PDF.js, tus-js-client (resumable uploads) |
-| Hosting | Netlify (config in `netlify.toml`) |
+| Hosting | Vercel (config in `vercel.json`) |
 
 ---
 
@@ -69,7 +70,7 @@ Administrators create member accounts and upload training PDFs and videos. Membe
 | `npm run dev` | Run the site locally with live reload |
 | `npm run build` | Build the production version into `dist/` |
 | `npm run preview` | Serve that production build locally |
-| `npm run test:db` | Apply all migrations to a temporary database and run 158 security checks (no Supabase or internet needed) |
+| `npm run test:db` | Apply all migrations to a temporary database and run 167 security checks (no Supabase or internet needed) |
 | `npm run test:e2e` | Production acceptance test in Chrome against a simulated backend (needs Google Chrome) |
 | `npm run test:responsive` | Check every page at phone/tablet/desktop widths (needs Google Chrome) |
 
@@ -77,14 +78,14 @@ Administrators create member accounts and upload training PDFs and videos. Membe
 
 ## Environment variables
 
-These go in `.env.local` (your computer) and in **Netlify → Site configuration → Environment variables** (live site). See `.env.example`.
+These go in `.env.local` (your computer) and in **Vercel → Project → Settings → Environment Variables** (live site). See `.env.example`.
 
 | Variable | Required | Value |
 |---|---|---|
 | `VITE_SUPABASE_URL` | yes | `https://<your-project-ref>.supabase.co` |
 | `VITE_SUPABASE_ANON_KEY` | yes | The **anon / publishable** key (public; safe in the browser). `VITE_SUPABASE_PUBLISHABLE_KEY` also works |
 | `VITE_MAX_UPLOAD_MB` | recommended | Your Supabase upload limit in MB (Free plan: `50`) |
-| `VITE_ENABLE_PREVIEW` | no | Local testing only. Never set on Netlify |
+| `VITE_ENABLE_PREVIEW` | no | Local testing only. Never set on Vercel |
 
 **Never** put the service-role / secret key in any `VITE_` variable; anything starting with `VITE_` is visible to every visitor. The app refuses to start if it detects one. The secret key lives only inside the Edge Function, where Supabase provides it automatically.
 
@@ -94,6 +95,7 @@ These go in `.env.local` (your computer) and in **Netlify → Site configuration
 |---|---|
 | `SITE_URL` | Your live address, e.g. `https://<your-site-domain>` (invite/reset links go here) |
 | `ALLOWED_ORIGINS` | Browser addresses allowed to call the function (comma-separated) |
+| `LOGIN_ALERT_SECRET` · `RESEND_API_KEY` · `ALERT_TO` · `ALERT_TIMEZONE` (· `ALERT_FROM`) | Login alert emails, see [DEPLOYMENT_GUIDE.md §4b](DEPLOYMENT_GUIDE.md) |
 
 ---
 
@@ -102,7 +104,7 @@ These go in `.env.local` (your computer) and in **Netlify → Site configuration
 Full steps: **[DEPLOYMENT_GUIDE.md §2–6](DEPLOYMENT_GUIDE.md)**. Details: [supabase/README.md](supabase/README.md).
 
 1. **Back up first** if the project already has data (`pg_dump`, see below).
-2. **Database:** `npx supabase link --project-ref <ref>` then `npx supabase db push`. This applies the 6 files in `supabase/migrations/` in order:
+2. **Database:** `npx supabase link --project-ref <ref>` then `npx supabase db push`. This applies the 7 files in `supabase/migrations/` in order:
 
    | File | Adds |
    |---|---|
@@ -112,6 +114,7 @@ Full steps: **[DEPLOYMENT_GUIDE.md §2–6](DEPLOYMENT_GUIDE.md)**. Details: [su
    | `20261115100000_training_storage.sql` | private storage buckets + rules |
    | `20261116100000_learning_progress_resume.sql` | video resume |
    | `20261117100000_admin_management.sql` | contact numbers, category visibility, announcements, audit log |
+| `20261118100000_login_alerts.sql` | server-side sign-in log + login alert emails |
 
 3. **Storage buckets** are created by the migrations, all **private**:
 
@@ -123,7 +126,7 @@ Full steps: **[DEPLOYMENT_GUIDE.md §2–6](DEPLOYMENT_GUIDE.md)**. Details: [su
    | `announcement-images` | announcement images | 5 MB |
 
    The project-wide limit (Storage → Settings) also applies. **Free plan: 50 MB per file.**
-4. **Edge Function:** `npx supabase functions deploy admin-members`, after setting the secrets above.
+4. **Edge Functions:** `npx supabase functions deploy admin-members`, after setting the secrets above. Optional login alerts: `login-alert`, see [DEPLOYMENT_GUIDE.md §4b](DEPLOYMENT_GUIDE.md).
 5. **Auth settings:**
    - turn **off** "Allow new users to sign up";
    - password minimum 8 with letters and digits;
@@ -146,17 +149,17 @@ To add another administrator, choose role **Administrator**.
 
 ---
 
-## Deploying to Netlify (summary)
+## Deploying to Vercel (summary)
 
 Full steps: **[DEPLOYMENT_GUIDE.md §7–10](DEPLOYMENT_GUIDE.md)**.
 
 1. Put the code in a private Git repository (GitHub/GitLab/Bitbucket).
-2. Netlify → Add new site → Import from Git. The build settings come from `netlify.toml`: command `npm run build`, publish folder `dist`, Node 22.
+2. Vercel → **Add New → Project** → import the repository. The build settings come from `vercel.json`: framework Vite, command `npm run build`, output `dist`. Node 22 comes from `package.json`.
 3. Add the environment variables, then deploy.
-4. In Supabase, set **Site URL** and **Redirect URLs** to the Netlify address, and update the Edge Function secrets.
+4. In Supabase, set **Site URL** and **Redirect URLs** to the Vercel address, and update the Edge Function secrets.
 5. Verify on the live site, including on a phone, using [PRODUCTION_CHECKLIST.md](PRODUCTION_CHECKLIST.md).
 
-`netlify.toml` also sets:
+`vercel.json` also sets:
 - the redirect that makes direct links like `/library/…` work;
 - strict security headers (Content-Security-Policy and more);
 - long-term caching for build files.
@@ -182,10 +185,11 @@ pg_dump "<connection string from Supabase → Connect → Session pooler>" --no-
 
 | What you see | What to do |
 |---|---|
-| "The portal isn't available right now" on the live site | Netlify is missing `VITE_SUPABASE_URL` / `VITE_SUPABASE_ANON_KEY`. Add them → **Clear cache and deploy site** |
-| "Page not found" from Netlify on refresh | `netlify.toml` must be in the repository root (it contains the redirect) |
+| "The portal isn't available right now" on the live site | Vercel is missing `VITE_SUPABASE_URL` / `VITE_SUPABASE_ANON_KEY`, or they were added after the build. Add them → Deployments → **⋯ → Redeploy** (without build cache) |
+| Vercel "404: NOT_FOUND" on refresh or direct link | `vercel.json` must be in the repository root (it contains the rewrite to `index.html`) |
 | Login works locally but not live | Supabase → Authentication → URL Configuration: set the live **Site URL** / Redirect URL |
 | Invitation or reset emails don't arrive | Configure custom SMTP (the built-in sender is very limited). Check spam |
+| No login alert email | Edge Functions → `login-alert` → Logs. Check the secrets (DEPLOYMENT_GUIDE §4b), that `pg_net` is enabled, and that you signed in as a **member** (admin sign-ins aren't emailed) |
 | Email link says "Link expired" | Links are single-use and expire (default 24 h). Admin → Members → ✉ sends a new one |
 | "Member management is not deployed yet" / network error on Add member | Deploy `admin-members`; check `ALLOWED_ORIGINS` includes the site address |
 | "The email could not be sent" / "Too many emails" | SMTP not configured, or the rate limit was hit |
@@ -194,7 +198,7 @@ pg_dump "<connection string from Supabase → Connect → Session pooler>" --no-
 | Upload: "larger than the storage limit allows" | Raise Storage → Settings → upload limit (paid plan) and set `VITE_MAX_UPLOAD_MB` to match |
 | Upload page: "storage buckets weren't found" | Run the migrations (`npx supabase db push`) |
 | Video says "format can't be played" | Re-encode to MP4 (H.264 + AAC), e.g. HandBrake "Fast 720p30" |
-| Images, videos or PDFs blocked on a custom Supabase domain | Add the domain to the CSP in `netlify.toml` |
+| Images, videos or PDFs blocked on a custom Supabase domain | Add the domain to the CSP in `vercel.json` |
 | A migration fails | Read the error message; don't edit already-applied files. Restore the backup into a new project to compare if unsure |
 | Locked out as admin | SQL Editor: `update public.profiles set role='admin', status='active' where email='<your-email>';` |
 
@@ -204,13 +208,15 @@ pg_dump "<connection string from Supabase → Connect → Session pooler>" --no-
 
 ```
 va-training-academy/
-├── netlify.toml               # Netlify build, redirects, security headers
+├── vercel.json                # Vercel build, SPA rewrite, security headers
 ├── .env.example               # Environment variable template (no real keys)
 ├── DEPLOYMENT_GUIDE.md · PRODUCTION_CHECKLIST.md · SECURITY_AUDIT.md · TEST_RESULTS.md
 ├── docs/SECURITY_CHECKLIST.md # Manual + API security tests
 ├── supabase/
-│   ├── migrations/            # 6 database migrations (apply in order)
+│   ├── migrations/            # 7 database migrations (apply in order)
 │   ├── functions/admin-members/   # Server function for member management
+│   ├── functions/login-alert/     # Emails the admin when a member signs in
+│   ├── setup/                 # One-time SQL: create_admins.sql, login_alerts.sql
 │   ├── tests/rls.test.mjs     # npm run test:db
 │   └── README.md              # Database, storage, email, limits
 ├── tests/e2e/                 # npm run test:e2e / test:responsive

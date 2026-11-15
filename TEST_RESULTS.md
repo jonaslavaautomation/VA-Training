@@ -10,7 +10,7 @@ There are three different environments, and a PASS in one doesn't prove the othe
 |---|---|---|
 | **Database tests** (`npm run test:db`) | The real migration files run on real Postgres (PGlite), with stand-ins for Supabase's `auth` and `storage` schemas | Run ✅ |
 | **Browser tests** (`npm run test:e2e`, `test:responsive`, plus the Phase 2–5 suites) | The real React app in real Chrome, talking to a **simulated** Supabase that copies the database rules | Run ✅ |
-| **Live** | Your hosted Supabase project, real emails, Netlify, real phones | **NOT TESTED**. Requires your accounts; nothing was deployed |
+| **Live** | Your hosted Supabase project, real emails, Vercel, real phones | **NOT TESTED**. Requires your accounts; nothing was deployed |
 
 **Result labels:**
 - **PASS:** verified by an automated test that ran and passed.
@@ -23,14 +23,15 @@ There are three different environments, and a PASS in one doesn't prove the othe
 
 | Suite | Checks | Result |
 |---|---|---|
-| Database & storage security (`npm run test:db`) | 158 | **158 PASS** |
+| Database & storage security (`npm run test:db`) | 167 | **167 PASS** |
+| Edge Function `login-alert` (Deno, simulated email provider) | 14 | **14 PASS** |
 | Edge Function `admin-members` (Deno, simulated Auth/REST) | 45 | **45 PASS** |
 | Browser: Phase 2 auth & member management | 33 | **33 PASS** |
 | Browser: Phase 3 uploads, storage, player, PDF viewer | 31 | **31 PASS** |
 | Browser: Phase 4 member learning experience | 34 | **34 PASS** |
 | Browser: Phase 5 admin management | 40 | **40 PASS** |
 | Browser: preview mode (local dev) | 4 | **4 PASS** |
-| **Production acceptance** (production build + Netlify headers/CSP/redirects) — `npm run test:e2e` | 28 | **28 PASS** |
+| **Production acceptance** (production build + Vercel headers/CSP/rewrite from `vercel.json`) — `npm run test:e2e` | 28 | **28 PASS** |
 | **Responsive audit**: 19 pages + 4 dialogs × 5 widths — `npm run test:responsive` | 148 | **148 PASS** |
 | Production build without env vars shows "not available" (no preview) | 3 routes | **PASS** |
 | CSP negative control (inline script + outside image blocked) | 2 | **PASS** |
@@ -101,9 +102,9 @@ Widths: **1920, 1366, 768, 390, 320 px.**
 
 ## 4. Production acceptance test (Phase 6, Task 8)
 
-Two accounts (one administrator, one member), run end to end on the **production build**, served with the real `netlify.toml` headers, CSP and SPA redirect.
+Two accounts (one administrator, one member), run end to end on the **production build**, served with the real `vercel.json` headers, CSP and SPA rewrite.
 
-| # | Step | Local production-build test | Live (your Supabase + Netlify + real email) |
+| # | Step | Local production-build test | Live (your Supabase + Vercel + real email) |
 |---|---|---|---|
 | 1 | Admin logs in | PASS | NOT TESTED |
 | 2 | Admin creates a new member account | PASS | NOT TESTED |
@@ -126,7 +127,7 @@ Two accounts (one administrator, one member), run end to end on the **production
 | 19 | Admin reactivates the member | PASS | NOT TESTED |
 | 20 | Member logs in again and keeps previous learning records | PASS | NOT TESTED |
 | E1 | Security headers + CSP on pages; assets cached immutably | PASS | NOT TESTED |
-| E2 | Direct navigation / refresh on deep links | PASS (Netlify rules simulated) | NOT TESTED |
+| E2 | Direct navigation / refresh on deep links | PASS (Vercel rules simulated) | NOT TESTED |
 | E3 | Logged-out visitor typing protected URLs → login | PASS | NOT TESTED |
 | E4 | Forgot password → reset → login with new password; link single-use | PASS (simulated email) | NOT TESTED |
 | E5 | Session persists across reload | PASS | NOT TESTED |
@@ -145,7 +146,7 @@ Two accounts (one administrator, one member), run end to end on the **production
 | Real email delivery (invites, resets) | No SMTP / inbox available | Invite yourself on the live site |
 | Supabase's TUS upload endpoint with large real videos (100 MB+) | Simulated endpoint; Free plan caps files at 50 MB | Upload a large video on a paid plan |
 | Signed-URL expiry enforced by Supabase | Expiry is Supabase's job; only our requested lifetimes were checked | docs/SECURITY_CHECKLIST.md test T4 |
-| Netlify itself (build, redirects, headers) | No deployment allowed without approval; config verified with a simulator | DEPLOYMENT_GUIDE §8–10 |
+| Vercel itself (build, rewrite, headers) | Config verified with a simulator that reads `vercel.json`; not run on Vercel's servers | DEPLOYMENT_GUIDE §8–10 |
 | Real devices, Safari/Firefox | Only Chrome available | Phone test in DEPLOYMENT_GUIDE §10 |
 | Database migrations on your existing data | No access to your data | Back up, then `db push` (DEPLOYMENT_GUIDE §2–3) |
 

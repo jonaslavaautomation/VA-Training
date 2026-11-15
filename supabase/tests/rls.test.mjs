@@ -49,6 +49,23 @@ await db.exec(`
   alter table storage.buckets enable row level security;
   alter table storage.objects enable row level security;
   grant all on storage.buckets, storage.objects to anon, authenticated, service_role;
+
+  -- Stand-ins for Supabase Vault, pg_net and auth.sessions (login alerts).
+  create schema vault;
+  create table vault.decrypted_secrets (name text primary key, decrypted_secret text);
+  create schema net;
+  create table net.calls (id bigserial primary key, url text, body jsonb, headers jsonb);
+  create table net.config (fail boolean default false);
+  insert into net.config values (false);
+  create function net.http_post(url text, body jsonb default '{}', params jsonb default '{}', headers jsonb default '{}', timeout_milliseconds int default 5000)
+    returns bigint language plpgsql as $$
+    declare new_id bigint;
+    begin
+      if (select fail from net.config limit 1) then raise exception 'simulated network failure'; end if;
+      insert into net.calls (url, body, headers) values (url, body, headers) returning id into new_id;
+      return new_id;
+    end $$;
+  create table auth.sessions (id uuid primary key default gen_random_uuid(), user_id uuid, created_at timestamptz default now(), user_agent text, ip text);
 `)
 
 for (const f of readdirSync(migrationsDir).filter((f) => f.endsWith('.sql')).sort()) {
@@ -427,6 +444,41 @@ await as('postgres', null, async () => {
   fns.length === 0 ? ok('every SECURITY DEFINER function pins search_path') : bad('definer functions without search_path', fns.map((f) => f.proname).join(','))
   const anonGrants = await q(`select table_name from information_schema.role_table_grants where grantee = 'anon' and table_schema = 'public'`)
   anonGrants.length === 0 ? ok('anon role has no table privileges') : bad('anon grants', [...new Set(anonGrants.map((g) => g.table_name))].join(','))
+})
+
+// ---- Login alerts -------------------------------------------------------------
+console.log('\nlogin alerts')
+const signIns = async (uid) => (await q(`select count(*)::int as n from public.activity_logs where user_id = $1 and activity_type = 'signed_in'`, [uid]))[0].n
+const calls = async () => (await q(`select url, body, headers from net.calls order by id`))
+await as('postgres', null, async () => {
+  const beforeM3 = await signIns(M3)
+  await q(`update auth.users set last_sign_in_at = now() where id = $1`, [M3])
+  ;(await signIns(M3)) === beforeM3 + 1 ? ok('member sign-in is recorded server-side in activity_logs') : bad('sign-in log', await signIns(M3))
+  ;(await calls()).length === 0 ? ok('no email request while alerts are not configured (and sign-in still works)') : bad('unexpected call', JSON.stringify(await calls()))
+
+  await q(`insert into vault.decrypted_secrets values ('login_alert_url', 'https://ref.supabase.co/functions/v1/login-alert'), ('login_alert_secret', 's3cret')`)
+  await q(`insert into auth.sessions (user_id, user_agent, ip) values ($1, 'Mozilla/5.0 (Windows NT 10.0) Chrome/130', '203.0.113.7')`, [M3])
+  await q(`update auth.users set last_sign_in_at = now() + interval '1 minute' where id = $1`, [M3])
+  const c = await calls()
+  c.length === 1 && c[0].url.endsWith('/login-alert') && c[0].headers['x-alert-secret'] === 's3cret' && c[0].body.email === 'm3@example.com' && c[0].body.user_agent.includes('Chrome') && c[0].body.ip === '203.0.113.7'
+    ? ok('member sign-in sends one alert request (with secret, email, device)') : bad('alert call', JSON.stringify(c))
+
+  const beforeA = await signIns(A)
+  await q(`update auth.users set last_sign_in_at = now() + interval '2 minutes' where id = $1`, [A])
+  ;(await signIns(A)) === beforeA + 1 && (await calls()).length === 1 ? ok('admin sign-in is logged but sends no email (members only)') : bad('admin alert', JSON.stringify(await calls()))
+
+  await q(`update auth.users set email = 'm3@example.com' where id = $1`, [M3])
+  ;(await calls()).length === 1 ? ok('other account updates (not sign-ins) send nothing') : bad('non sign-in triggered', (await calls()).length)
+
+  await q(`update net.config set fail = true`)
+  const rows = await q(`update auth.users set last_sign_in_at = now() + interval '3 minutes' where id = $1 returning id`, [M3])
+  rows.length === 1 ? ok('a failing alert can never block the sign-in') : bad('sign-in blocked', rows.length)
+  await q(`update net.config set fail = false`)
+})
+await as('authenticated', M3, async () => {
+  await expectError('browsers can no longer write fake "signed in" entries', `insert into public.activity_logs (activity_type) values ('signed_in')`, /row-level security/)
+  await expectRows('other learning activity can still be logged', `insert into public.activity_logs (activity_type) values ('watched') returning id`, 1)
+  await expectError('handle_user_sign_in is not callable through the API', `select public.handle_user_sign_in()`, /permission denied|trigger functions can only be called as triggers/)
 })
 
 console.log(`\n${passed} passed, ${failed} failed`)

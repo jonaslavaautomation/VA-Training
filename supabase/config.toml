@@ -16,3 +16,7 @@ enable_signup = false
 # checks profiles.role/status, so it works with both legacy JWT keys and the
 # newer publishable/secret API keys.
 verify_jwt = false
+
+[functions.login-alert]
+# Called by the database (pg_net) with a shared secret header, not by browsers.
+verify_jwt = false

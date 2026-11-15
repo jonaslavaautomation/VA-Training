@@ -4,17 +4,17 @@
 - the React app (`src/`);
 - the Supabase migrations: tables, Row Level Security (RLS), storage policies, functions and triggers;
 - the `admin-members` Edge Function;
-- environment and configuration (`.env.example`, `netlify.toml`, `supabase/config.toml`);
+- environment and configuration (`.env.example`, `vercel.json`, `supabase/config.toml`);
 - dependencies.
 
 **Method:** code review plus automated tests.
 - 158 database/storage policy checks run on real Postgres (PGlite) with a Supabase-like `auth` and `storage` setup.
 - 45 functional checks on the Edge Function.
 - 170+ browser tests on the real app against a simulated Supabase API.
-- A production-build acceptance test served with the real `netlify.toml` headers.
+- A production-build acceptance test served with the real `vercel.json` headers and rewrite.
 
 **Not covered (honest limits):**
-- Nothing was run against **your** hosted Supabase project, real email delivery or Netlify. Those tests need your accounts; see [TEST_RESULTS.md](TEST_RESULTS.md).
+- Nothing was run against **your** hosted Supabase project, real email delivery or Vercel. Those tests need your accounts; see [TEST_RESULTS.md](TEST_RESULTS.md).
 - The database tests emulate Supabase's `auth` and `storage` schemas; they are not the hosted service.
 - Repeat the manual and API checks in [docs/SECURITY_CHECKLIST.md](docs/SECURITY_CHECKLIST.md) on the live project.
 
@@ -27,7 +27,7 @@ Severity scale: **Critical** (exploitable data breach), **High**, **Medium**, **
 | # | Issue | Severity | Affected file / component | Recommended fix | Status |
 |---|---|---|---|---|---|
 | F1 | A production deploy missing the Supabase env vars fell back to **Preview mode**: a public "Admin view / Member view" interface on sample data. No real data was exposed, but it looked like an open portal | Medium | `src/lib/supabase.js`, `src/main.jsx` | Preview mode only in local dev (or an explicit `VITE_ENABLE_PREVIEW`); production shows a neutral "not available" page | **Resolved (Phase 6)**. Verified: a production build without env shows the config page on every route, with no preview controls |
-| F2 | **No security headers / Content-Security-Policy on Netlify.** Headers existed only in `vercel.json`, which Netlify ignores | Medium | `netlify.toml` (new) | Add CSP, HSTS, X-Frame-Options, nosniff, Referrer-Policy, Permissions-Policy, COOP, X-Robots-Tag | **Resolved (Phase 6)**. Verified in the production acceptance test, with a negative control: CSP blocked an injected inline script and an outside image |
+| F2 | **Missing security headers / Content-Security-Policy on Vercel.** `vercel.json` only set 4 basic headers; no CSP, HSTS, Permissions-Policy or COOP | Medium | `vercel.json` | Add CSP, HSTS, X-Frame-Options, nosniff, Referrer-Policy, Permissions-Policy, COOP, X-Robots-Tag | **Resolved (Phase 6)**. Verified in the production acceptance test, with a negative control: CSP blocked an injected inline script and an outside image |
 | F3 | A member can set their own `avatar_url` to any external URL through the API (there's no avatar feature in the UI). Admins viewing them would load that image (a tracking-pixel / IP leak, not script execution) | Low | `profiles.avatar_url` | CSP `img-src` allows only this site and Supabase, so outside images are blocked | **Mitigated (Phase 6)** by F2. Optional: lock the column in `protect_profile_fields` if avatars are never added |
 | F4 | Audit-log triggers built changed-field lists with `text[] || 'literal'`, which Postgres rejects, so every resource/category edit would have errored once deployed | High (availability) | `20261117100000_admin_management.sql` | Use `array_append` | **Resolved (Phase 5)**, caught by the DB test suite before any deploy |
 | F5 | A member could re-point their own progress row at a resource they can't see (e.g. a draft id) | Low | `learning_progress` UPDATE policy | WITH CHECK requires a visible resource | **Resolved (Phase 4)** |
@@ -36,12 +36,14 @@ Severity scale: **Critical** (exploitable data breach), **High**, **Medium**, **
 | C2 | Supabase's server-side password minimum defaults to 6 characters; the app's forms require 8 plus letter and digit, but a direct API call could set a weaker one | Medium (config) | Supabase Auth settings | Password requirements: minimum 8, letters + digits. Consider "leaked password protection" on paid plans | **Action required by you** |
 | C3 | Edge Function CORS allows any origin when `ALLOWED_ORIGINS` is unset. CORS isn't authorization (a valid admin token is still required), but restricting it adds a layer | Low (config) | `supabase/functions/_shared/cors.ts` | Set `ALLOWED_ORIGINS` (and `SITE_URL`) to the live domain | **Action required by you** (DG §4) |
 | C4 | The built-in Supabase email sender is rate-limited and only sends to team addresses, so invites/resets may not arrive | Medium (availability) | Supabase Auth → SMTP | Configure custom SMTP | **Action required by you** |
-| C5 | A Supabase custom domain would be blocked by the CSP | Info | `netlify.toml` | Add the domain to `img-src`, `media-src`, `connect-src` | Documented (DG §8) |
+| C5 | A Supabase custom domain would be blocked by the CSP | Info | `vercel.json` | Add the domain to `img-src`, `media-src`, `connect-src` | Documented (DG §8) |
 | A1 | Session tokens live in the browser's localStorage (standard for Supabase SPAs). Any successful XSS could read them | Low | `src/lib/supabase.js` | Keep XSS surface minimal: no raw HTML rendering, plus strict CSP | **Accepted**. The scan found no `dangerouslySetInnerHTML`/`innerHTML`/`eval`; CSP forbids inline and outside scripts |
 | A2 | Signed file URLs stay valid until expiry after a deactivation or unpublish: video ≤ 1 h, PDF ≤ 5 min, download ≤ 60 s. Data access via the API stops immediately | Low | `src/config/constants.js` (`SIGNED_URL_TTL`) | Shorten TTLs if needed (the video player re-signs automatically) | **Accepted**, documented |
 | A3 | An existing access token remains valid until expiry (≤ 1 h) after deactivation, but every table/storage policy requires an active profile, and refresh is blocked by the auth ban | Low | Supabase JWT expiry | Optionally lower the JWT expiry (e.g. 15 min) | **Accepted**. Verified: a deactivated member's API calls return no data |
 | A4 | Invite/reset links that carry tokens could log a victim into an *attacker's* account if the victim clicks the attacker's link ("login CSRF"). No access to the victim's data results | Low | `src/services/authService.js` (`completeAuthRedirect`) | The reset page shows which email is signed in; links are single-use | **Accepted** |
 | A5 | Members can save what their browser plays or downloads; signed URLs prevent sharing *links*, not copying files | Info | — | DRM/streaming host if ever required | **Accepted**, documented |
+| L1 | **Login alerts:** emails contain a member's name, email, sign-in time, device and IP address (personal data) and go to `ALERT_TO` | Info | `supabase/functions/login-alert` | Only send to administrator inboxes; IP is shown only when Supabase provides it | **By design.** The function accepts only database requests carrying a random secret stored in Vault (constant-time check); names are HTML-escaped; failures can't block sign-in (verified) |
+| L2 | "Signed in" activity entries were written by the browser and could be skipped or faked | Low | `activity_logs` | Record sign-ins with a server-side trigger; forbid browser inserts of `signed_in` | **Resolved**. Trigger on `auth.users.last_sign_in_at`; browser insert now rejected (tested) |
 | A6 | Admin-only error messages from `delete_category` may show short database messages | Info | `src/services/categoryService.js` | Messages are written by our function; admins only | **Accepted** |
 
 **No open Critical or High issues.** Every Medium code issue is resolved. The open Medium items are **dashboard settings you need to apply** (C1, C2, C4).

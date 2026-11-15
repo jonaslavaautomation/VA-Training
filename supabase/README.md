@@ -11,13 +11,15 @@ supabase/
 │   ├── 20261114100200_rls_policies.sql      # Row Level Security for every table
 │   ├── 20261115100000_training_storage.sql  # Phase 3: private buckets, Storage RLS, file integrity, orphan finder
 │   ├── 20261116100000_learning_progress_resume.sql  # Phase 4: video resume columns + tighter progress UPDATE policy
-│   └── 20261117100000_admin_management.sql  # Phase 5: contact numbers, category visibility, announcements workflow + images, audit log, admin helpers
+│   ├── 20261117100000_admin_management.sql  # Phase 5: contact numbers, category visibility, announcements workflow + images, audit log, admin helpers
+│   └── 20261118100000_login_alerts.sql      # Server-side sign-in log + member login alert emails (pg_net → login-alert)
 ├── functions/
 │   ├── _shared/cors.ts
 │   ├── admin-members/index.ts               # create / edit / activate / deactivate members, send emails
 │   ├── admin-members/deno.json
 │   └── .env.example                         # Edge Function secrets template
-└── tests/rls.test.mjs                       # `npm run test:db` — 158 database + storage security checks
+├── setup/                                   # one-time SQL: create_admins.sql, login_alerts.sql
+└── tests/rls.test.mjs                       # `npm run test:db` — 167 database + storage security checks
 ```
 
 ---
@@ -31,7 +33,7 @@ supabase/
    cp .env.example .env.local
    # set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY
    ```
-4. On your host (Vercel/Netlify), add the same two variables to the project's environment settings.
+4. On Vercel (Project → Settings → Environment Variables), add the same two variables, then redeploy.
 
 > The **service_role / secret** key never goes in `.env.local` or the host's frontend env vars. Supabase injects it into the Edge Function automatically.
 

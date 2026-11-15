@@ -28,5 +28,8 @@
     "playwright-core": "^1.65.1",
     "tailwindcss": "^4.3.5",
     "vite": "^8.3.8"
+  },
+  "engines": {
+    "node": "22.x"
   }
 }
