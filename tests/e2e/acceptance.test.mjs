@@ -208,7 +208,7 @@ try {
     await text(admin, 'has been deactivated')
   })
   await step(18, 'Deactivated member is denied access to protected training materials', async () => {
-    await member.goto(`${BASE}/library/${pdfId()}`); await text(member, 'Account deactivated')
+    await member.goto(`${BASE}/library/${pdfId()}`); await text(member, 'Account not active')
     const r = await member.evaluate(async (api) => {
       const key = Object.keys(localStorage).find((k) => k.endsWith('-auth-token'))
       const tok = JSON.parse(localStorage.getItem(key)).access_token
@@ -278,6 +278,75 @@ try {
   })
   await step('E6', 'No Content-Security-Policy violations during the whole run (PDF.js worker, video, images, uploads)', async () => {
     assert(!cspViolations.length, cspViolations.slice(0, 3).join(' | '))
+  })
+  console.log('\npublic sign-up ("Create account")')
+  async function signUpVia(page, first, last, email, pw) {
+    await page.goto('about:blank'); await page.goto(`${BASE}/login`)
+    await page.getByRole('link', { name: 'Create an account' }).click()
+    await url(page, '/signup')
+    await page.getByLabel('First name').fill(first); await page.getByLabel('Last name').fill(last)
+    await page.getByLabel('Email address').fill(email)
+    await page.getByLabel('Password', { exact: true }).fill(pw)
+    await page.getByLabel('Confirm password').fill(pw)
+    await page.getByRole('button', { name: 'Create account' }).click()
+  }
+  await step('S1', 'Visitor creates an account from the login page and is signed in straight away', async () => {
+    const p = await newPage()
+    await signUpVia(p, 'Nina', 'Reyes', 'nina@example.com', 'Learning123')
+    await url(p, '/dashboard'); await text(p, 'Welcome back, Nina')
+    const prof = [...state.profiles.values()].find((x) => x.email === 'nina@example.com')
+    assert(prof?.role === 'member' && prof.status === 'active', JSON.stringify(prof))
+    await p.goto(`${BASE}/library`); await text(p, 'VA Handbook') // can open training immediately
+    await p.goto(`${BASE}/admin`); await url(p, '/dashboard')   // but no admin access
+    await p.context().close()
+  })
+  await step('S2', 'New member’s first sign-in is recorded server-side (this is what triggers the admin alert email)', async () => {
+    const id = [...state.profiles.values()].find((x) => x.email === 'nina@example.com').id
+    assert(state.activity.filter((a) => a.user_id === id && a.activity_type === 'signed_in').length === 1, 'no sign-in record')
+    await admin.goto(`${BASE}/admin/activity`)
+    await admin.getByRole('tab', { name: 'Member activity' }).click()
+    await admin.getByTestId('log-row').filter({ hasText: 'Nina Reyes' }).filter({ hasText: 'Signed in' }).first().waitFor({ timeout: 12000 })
+    await admin.goto(`${BASE}/admin/members`); await admin.getByLabel('Search members by name or email').fill('nina'); await text(admin, 'nina@example.com')
+  })
+  await step('S3', 'Signing up again with the same email is refused; weak passwords are refused', async () => {
+    const p = await newPage()
+    await signUpVia(p, 'Nina', 'Again', 'nina@example.com', 'Learning123')
+    await text(p, 'An account with this email already exists')
+    await p.getByLabel('Password', { exact: true }).fill('short'); await p.getByLabel('Confirm password').fill('short')
+    await p.getByRole('button', { name: 'Create account' }).click()
+    await text(p, 'Password must be at least 8 characters')
+    await p.context().close()
+  })
+  await step('S4', 'With "Confirm email" on: sign-up asks to check email; sign-in waits for confirmation', async () => {
+    state.confirmEmail = true
+    const p = await newPage()
+    await signUpVia(p, 'Omar', 'Diaz', 'omar@example.com', 'Learning123')
+    await text(p, 'Check your email'); await text(p, 'omar@example.com')
+    assert(state.emails.includes('confirm:omar@example.com'), 'no confirmation email')
+    await login(p, 'omar@example.com', 'Learning123'); await text(p, 'Please confirm your email first')
+    state.users.get([...state.profiles.values()].find((x) => x.email === 'omar@example.com').id).unconfirmed = false // user clicks the link
+    await login(p, 'omar@example.com', 'Learning123'); await url(p, '/dashboard')
+    await p.context().close()
+    state.confirmEmail = false
+  })
+  await step('S5', 'Approval mode: new account waits on "Account not active" until an admin activates it', async () => {
+    state.newAccountStatus = 'inactive'
+    const p = await newPage()
+    await signUpVia(p, 'Paula', 'Cruz', 'paula@example.com', 'Learning123')
+    await text(p, 'Account not active')
+    await admin.goto(`${BASE}/admin/members`)
+    await admin.getByLabel('Search members by name or email').fill('paula')
+    await admin.getByRole('button', { name: 'Reactivate Paula Cruz' }).first().click()
+    await admin.getByRole('dialog').getByRole('button', { name: 'Reactivate' }).click()
+    await text(admin, 'has been reactivated')
+    await p.goto(`${BASE}/library`); await text(p, 'VA Handbook')
+    await p.context().close()
+    state.newAccountStatus = 'active'
+  })
+  await step('S6', 'Nobody can sign up as an administrator (role in sign-up data is ignored)', async () => {
+    const res = await fetch(`${API}/auth/v1/signup`, { method: 'POST', headers: { 'Content-Type': 'application/json', apikey: 'k' }, body: JSON.stringify({ email: 'sneaky@example.com', password: 'Learning123', data: { first_name: 'S', role: 'admin' } }) })
+    assert(res.ok, `status ${res.status}`)
+    assert([...state.profiles.values()].find((x) => x.email === 'sneaky@example.com')?.role === 'member', 'got admin role')
   })
   const relevant = errors.filter((e) => !/Failed to load resource|status of 4\d\d/.test(e))
   await step('E7', 'No unexpected console errors in the production build', async () => assert(!relevant.length, relevant.slice(0, 3).join(' | ')))

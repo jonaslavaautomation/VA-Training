@@ -10,6 +10,7 @@ import { lazyPage } from '@/lib/lazyPage'
 
 import LoginPage from '@/pages/auth/LoginPage'
 import ForgotPasswordPage from '@/pages/auth/ForgotPasswordPage'
+import SignUpPage from '@/pages/auth/SignUpPage'
 import ResetPasswordPage from '@/pages/auth/ResetPasswordPage'
 import NotFoundPage from '@/pages/NotFoundPage'
 
@@ -38,6 +39,7 @@ export default function AppRoutes() {
         <Route element={<PublicOnlyRoute />}>
           <Route path="/login" element={<LoginPage />} />
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+          <Route path="/signup" element={<SignUpPage />} />
         </Route>
         <Route path="/reset-password" element={<ResetPasswordPage />} />
       </Route>

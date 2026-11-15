@@ -73,7 +73,7 @@ Backups contain member emails and account data, so treat them as confidential. K
 
 ## 3. Set up the Supabase database
 
-The database is created by 7 migration files in `supabase/migrations/`. They run **in filename order**:
+The database is created by 8 migration files in `supabase/migrations/`. They run **in filename order**:
 
 | # | File | What it does | Changes existing data? |
 |---|---|---|---|
@@ -84,6 +84,7 @@ The database is created by 7 migration files in `supabase/migrations/`. They run
 | 5 | `20261116100000_learning_progress_resume.sql` | Video resume columns | No (adds columns, default 0) |
 | 6 | `20261117100000_admin_management.sql` | Contact numbers, category visibility, announcements, audit log | Converts `announcements.published` → `status`, then removes the old column |
 | 7 | `20261118100000_login_alerts.sql` | Server-side sign-in log + member login alert emails | No (adds a trigger and a function) |
+| 8 | `20261119100000_self_signup.sql` | "Create account": new-account setting + first-sign-in alerts | No (adds a settings table) |
 
 None of them delete members, progress, favorites, resources or files.
 
@@ -121,7 +122,7 @@ npx supabase functions deploy admin-members
 
 ### 4b. Login alert emails (member sign-ins → your inbox)
 
-Every time a **member** signs in, an email goes to the administrator saying who signed in, when, and from which device, with a link to their profile. Administrators' own sign-ins aren't emailed. **Every** sign-in is also listed under Admin → Activity Logs → *Member activity → Signed in*.
+Every time a **member** signs in, an email goes to the administrator saying who signed in, when, and from which device, with a link to their profile. A member's **first** sign-in (e.g. right after creating their account) is titled **"New member joined"**; in approval mode it's **"New account awaiting approval"**. Administrators' own sign-ins aren't emailed. **Every** sign-in is also listed under Admin → Activity Logs → *Member activity → Signed in*.
 
 1. **Create a free Resend account** at <https://resend.com>, ideally using the address that should receive the alerts (e.g. jonasrosauro122@gmail.com). Then go to **API Keys → Create API key** and copy it (`re_…`).
    - Resend's built-in sender (`onboarding@resend.dev`) can only email the **Resend account owner's** address. To send to any other address, or from your own domain, verify the domain under **Domains** in Resend.
@@ -152,12 +153,21 @@ Dashboard → **Authentication**:
 
 | Setting | Value | Why |
 |---|---|---|
-| Sign In / Providers → **Allow new users to sign up** | **Off** | No public registration; only admins create accounts |
+| Sign In / Providers → **Allow new users to sign up** | **On** | Needed for the **Create account** page. Accounts are always members, never admins |
+| Sign In / Providers → Email → **Confirm email** | **On** (recommended) | New accounts must prove they own the email before signing in. Needs working SMTP (below). If Off, people are signed in right after creating the account |
+| Emails → Templates → **Confirm signup** | Link: `{{ .SiteURL }}/login?token_hash={{ .TokenHash }}&type=email` | Confirmation links that work on any device |
+| *(Optional)* Attack Protection → **CAPTCHA** | Turnstile or hCaptcha | Recommended if bots start creating accounts. Ask me to add the widget to the sign-up form |
 | Sign In / Providers → Email | Enabled | Email + password login |
 | **Password requirements** (Providers → Email) | Minimum length **8**; require letters and digits | The app enforces this on its forms; this makes the server enforce it too |
 | Emails → **SMTP Settings** | Your provider's details | The built-in sender only sends a few emails per hour, to team members only |
 | Emails → Templates → **Invite user** and **Reset password** | Use the templates in [supabase/README.md §2](supabase/README.md) | Links that work on any device |
 | URL Configuration | Set in [step 9](#9-tell-supabase-your-live-website-address) | |
+
+**New accounts: open or approval?** By default, people who create their own account can use the portal right away. To approve every new person yourself, run this once in the **SQL Editor**:
+```sql
+update public.portal_settings set new_account_status = 'inactive';
+```
+New accounts then see "Account not active" until you activate them in **Admin → Members**. Their alert email says "New account awaiting approval", with a link straight to them. Switch back any time with `'active'`.
 
 Dashboard → **Storage → Settings → Upload file size limit**:
 - **Free plan:** 50 MB, which is the maximum, so videos must be 50 MB or smaller.

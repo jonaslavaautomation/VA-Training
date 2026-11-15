@@ -12,14 +12,15 @@ supabase/
 │   ├── 20261115100000_training_storage.sql  # Phase 3: private buckets, Storage RLS, file integrity, orphan finder
 │   ├── 20261116100000_learning_progress_resume.sql  # Phase 4: video resume columns + tighter progress UPDATE policy
 │   ├── 20261117100000_admin_management.sql  # Phase 5: contact numbers, category visibility, announcements workflow + images, audit log, admin helpers
-│   └── 20261118100000_login_alerts.sql      # Server-side sign-in log + member login alert emails (pg_net → login-alert)
+│   ├── 20261118100000_login_alerts.sql      # Server-side sign-in log + member login alert emails (pg_net → login-alert)
+│   └── 20261119100000_self_signup.sql       # "Create account": portal_settings.new_account_status + first-sign-in alerts
 ├── functions/
 │   ├── _shared/cors.ts
 │   ├── admin-members/index.ts               # create / edit / activate / deactivate members, send emails
 │   ├── admin-members/deno.json
 │   └── .env.example                         # Edge Function secrets template
 ├── setup/                                   # one-time SQL: create_admins.sql, login_alerts.sql
-└── tests/rls.test.mjs                       # `npm run test:db` — 167 database + storage security checks
+└── tests/rls.test.mjs                       # `npm run test:db` — 176 database + storage security checks
 ```
 
 ---
@@ -41,7 +42,8 @@ supabase/
 
 | Setting | Where | Value |
 |---|---|---|
-| Public sign-ups | Authentication → Sign In / Providers → **Allow new users to sign up** | **Off** (invites still work) |
+| Public sign-ups ("Create account") | Authentication → Sign In / Providers → **Allow new users to sign up** | **On**. New accounts are always members; open or approval mode via `portal_settings` (DEPLOYMENT_GUIDE §5) |
+| Confirm email | Authentication → Sign In / Providers → Email → **Confirm email** | **On** (recommended). Template **Confirm signup**: `{{ .SiteURL }}/login?token_hash={{ .TokenHash }}&type=email` |
 | Email provider | Authentication → Sign In / Providers → Email | Enabled |
 | Site URL | Authentication → URL Configuration | `https://your-app-domain` |
 | Redirect URLs | Authentication → URL Configuration | `https://your-app-domain/reset-password` and `http://localhost:5173/reset-password` |

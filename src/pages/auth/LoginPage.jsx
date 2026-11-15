@@ -11,7 +11,8 @@ import { validateEmail } from '@/lib/validators'
 import { getRememberMe } from '@/lib/supabase'
 
 export default function LoginPage() {
-  const { signIn, isPreview, startPreview, sessionExpired } = useAuth()
+  const { signIn, isPreview, startPreview, sessionExpired, authLink } = useAuth()
+  const confirmLink = authLink && ['signup', 'email'].includes(authLink.type) ? authLink : null
   const navigate = useNavigate()
   const location = useLocation()
   const [form, setForm] = useState({ email: '', password: '', remember: getRememberMe() })
@@ -59,6 +60,10 @@ export default function LoginPage() {
 
       {serverError ? (
         <Alert type="error" className="mt-6">{serverError}</Alert>
+      ) : confirmLink?.error ? (
+        // Supabase confirms the email before redirecting, so signing in usually works even if
+        // the link was opened on another device or browser.
+        <Alert type="info" className="mt-6">Your email is confirmed. Please sign in with your email and password.</Alert>
       ) : sessionExpired ? (
         <Alert type="info" className="mt-6">Your session has ended. Please sign in again.</Alert>
       ) : null}
@@ -114,8 +119,9 @@ export default function LoginPage() {
         </div>
       )}
 
-      <p className="mt-6 text-center text-xs text-slate-500">
-        Accounts are created by an administrator. There is no public registration.
+      <p className="mt-6 text-center text-sm text-slate-500">
+        New to VA Training Academy?{' '}
+        <Link to="/signup" className="inline-flex min-h-6 items-center font-medium text-navy-700 hover:text-navy-900">Create an account</Link>
       </p>
     </>
   )

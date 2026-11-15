@@ -1,5 +1,7 @@
 // =====================================================================
-// login-alert — emails the administrator when a MEMBER signs in.
+// login-alert — emails the administrator when a MEMBER signs in
+// (subject says "New member joined" on their first-ever sign-in, or
+// "New account awaiting approval" when self-registration needs approval).
 //
 // Called only by the database trigger `on_auth_user_signed_in`
 // (migration 20261118100000_login_alerts.sql) through pg_net. Requests must
@@ -31,6 +33,8 @@ type Alert = {
   signed_in_at?: string
   user_agent?: string | null
   ip?: string | null
+  first_sign_in?: boolean
+  account_status?: 'active' | 'inactive'
 }
 
 const json = (status: number, body: unknown) =>
@@ -89,25 +93,37 @@ export function buildEmail(a: Alert) {
   const rows: [string, string][] = [['Member', `${name} (${email})`], ['When', when], ['Device', device]]
   if (a.ip) rows.push(['IP address', a.ip])
 
-  const subject = `New sign-in — ${name}`.slice(0, 150)
+  // First-ever sign-in = a new member (e.g. just created their own account).
+  const awaitingApproval = a.account_status === 'inactive'
+  const kind = awaitingApproval ? 'New account awaiting approval' : a.first_sign_in ? 'New member joined' : 'New sign-in'
+  const headline = awaitingApproval
+    ? `${name} created an account and is waiting for your approval.`
+    : a.first_sign_in
+      ? `${name} joined and signed in for the first time.`
+      : `${name} signed in.`
+  const action = awaitingApproval ? 'Review & activate' : 'View member'
+
+  const subject = `${kind} — ${name}`.slice(0, 150)
   const text = [
-    `${name} (${email}) signed in to VA Training Academy.`,
+    awaitingApproval || a.first_sign_in ? `${headline} (${email})` : `${name} (${email}) signed in to VA Training Academy.`,
+    ...(awaitingApproval ? ['Activate them in Admin → Members to give access.'] : []),
     '',
     ...rows.slice(1).map(([k, v]) => `${k}: ${v}`),
-    ...(link ? ['', `View member: ${link}`] : []),
+    ...(link ? ['', `${action}: ${link}`] : []),
     '',
     'You receive this because you are the VA Training Academy administrator.',
   ].join('\n')
   const html = `<!doctype html><html><body style="margin:0;background:#f8fafc;font-family:Arial,Helvetica,sans-serif;color:#0f2747">
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="padding:24px 12px"><tr><td align="center">
     <table role="presentation" width="100%" style="max-width:520px;background:#ffffff;border:1px solid #e2e8f0;border-radius:12px" cellpadding="0" cellspacing="0">
-      <tr><td style="padding:20px 24px;border-bottom:1px solid #e2e8f0"><strong style="font-size:15px">VA Training Academy</strong><br><span style="font-size:13px;color:#64748b">New member sign-in</span></td></tr>
+      <tr><td style="padding:20px 24px;border-bottom:1px solid #e2e8f0"><strong style="font-size:15px">VA Training Academy</strong><br><span style="font-size:13px;color:#64748b">${escapeHtml(kind)}</span></td></tr>
       <tr><td style="padding:20px 24px">
-        <p style="margin:0 0 16px;font-size:15px"><strong>${escapeHtml(name)}</strong> signed in.</p>
+        <p style="margin:0 0 16px;font-size:15px">${escapeHtml(headline)}</p>
+        ${awaitingApproval ? '<p style="margin:0 0 16px;font-size:14px;color:#92400e;background:#fffbeb;padding:10px 12px;border-radius:8px">They can’t open any training until you activate them in Admin → Members.</p>' : ''}
         <table role="presentation" cellpadding="0" cellspacing="0" style="font-size:14px">
           ${rows.map(([k, v]) => `<tr><td style="padding:4px 16px 4px 0;color:#64748b;white-space:nowrap">${escapeHtml(k)}</td><td style="padding:4px 0">${escapeHtml(v)}</td></tr>`).join('')}
         </table>
-        ${link ? `<p style="margin:20px 0 0"><a href="${escapeHtml(link)}" style="display:inline-block;background:#0f2747;color:#ffffff;text-decoration:none;padding:10px 16px;border-radius:8px;font-size:14px">View member</a></p>` : ''}
+        ${link ? `<p style="margin:20px 0 0"><a href="${escapeHtml(link)}" style="display:inline-block;background:#0f2747;color:#ffffff;text-decoration:none;padding:10px 16px;border-radius:8px;font-size:14px">${escapeHtml(action)}</a></p>` : ''}
       </td></tr>
       <tr><td style="padding:14px 24px;border-top:1px solid #e2e8f0;font-size:12px;color:#94a3b8">You receive this because you are the VA Training Academy administrator. All sign-ins are also listed under Admin → Activity Logs.</td></tr>
     </table>

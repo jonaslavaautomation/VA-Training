@@ -61,7 +61,9 @@ export function AuthProvider({ children }) {
       if (!active) return
       if (link) {
         setAuthLink(link)
-        if (!link.error) setIsRecovery(true)
+        // Only invitation / password-reset links lead to "choose a password";
+        // sign-up confirmation links simply sign the person in.
+        if (!link.error && (link.type === 'invite' || link.type === 'recovery')) setIsRecovery(true)
       }
       setSession(s)
       setInitializing(false)
@@ -118,6 +120,12 @@ export function AuthProvider({ children }) {
     setSessionExpired(false)
     // The sign-in itself is recorded server-side (activity log + admin alert) by a database trigger.
     return authService.signInWithPassword(email, password, remember)
+  }, [])
+
+  const signUp = useCallback(async (values) => {
+    if (isPreviewMode) throw new Error('Creating accounts needs a connected Supabase project.')
+    setSessionExpired(false)
+    return authService.signUp(values)
   }, [])
 
   const signOut = useCallback(async () => {
@@ -201,6 +209,7 @@ export function AuthProvider({ children }) {
       sessionExpired,
       isPreview: isPreviewMode,
       signIn,
+      signUp,
       signOut,
       startPreview,
       refreshProfile,
@@ -209,7 +218,7 @@ export function AuthProvider({ children }) {
       completePasswordSetup,
       sendPasswordReset: authService.sendPasswordReset,
     }
-  }, [session, profile, profileError, previewRole, initializing, isRecovery, authLink, sessionExpired, signIn, signOut, startPreview, refreshProfile, updateOwnProfile, changePassword, completePasswordSetup])
+  }, [session, profile, profileError, previewRole, initializing, isRecovery, authLink, sessionExpired, signIn, signUp, signOut, startPreview, refreshProfile, updateOwnProfile, changePassword, completePasswordSetup])
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }

@@ -21,7 +21,7 @@ export default function AuthLayout() {
             Build the skills that make great virtual assistants.
           </h2>
           <p className="mt-4 text-navy-200">
-            Your private learning space for training videos, guides and resources — available to approved members only.
+            Your private learning space for training videos, guides and resources — for VA Training Academy members.
           </p>
           <ul className="mt-8 space-y-3">
             {highlights.map((h) => (

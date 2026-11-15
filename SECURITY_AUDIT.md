@@ -32,7 +32,7 @@ Severity scale: **Critical** (exploitable data breach), **High**, **Medium**, **
 | F4 | Audit-log triggers built changed-field lists with `text[] || 'literal'`, which Postgres rejects, so every resource/category edit would have errored once deployed | High (availability) | `20261117100000_admin_management.sql` | Use `array_append` | **Resolved (Phase 5)**, caught by the DB test suite before any deploy |
 | F5 | A member could re-point their own progress row at a resource they can't see (e.g. a draft id) | Low | `learning_progress` UPDATE policy | WITH CHECK requires a visible resource | **Resolved (Phase 4)** |
 | F6 | Activity log: browser sessions could previously write any allowed type for themselves, so admin-action entries could have been forged once those types existed | Medium | `activity_logs` INSERT policy | Browsers may insert only member learning types, with no target or details; admin entries come only from triggers / the Edge Function | **Resolved (Phase 5)** |
-| C1 | **Public sign-ups must be disabled** in the Supabase Dashboard (it's a dashboard setting, not code) | Medium (config) | Supabase Auth settings | Authentication → Allow new users to sign up = **Off** | **Action required by you.** Defense in depth already exists: any account created outside the admin flow starts **inactive** and can read nothing |
+| C1 | **Public sign-up is enabled by owner decision** ("Create account"). Anyone who finds the site can register and, in the default open mode, view all published training | Medium (accepted risk) | Supabase Auth settings | Keep **Confirm email** on; enable CAPTCHA if bots appear; switch to approval mode (`portal_settings.new_account_status = 'inactive'`) to vet each person; deactivate unwanted accounts in Admin → Members | **Accepted by owner.** Safeguards built in and tested: self-registered accounts are always `member` (a role in sign-up data is ignored); approval mode; fail-closed if the setting is missing; settings unreadable from the browser; the admin is emailed on every member's first sign-in |
 | C2 | Supabase's server-side password minimum defaults to 6 characters; the app's forms require 8 plus letter and digit, but a direct API call could set a weaker one | Medium (config) | Supabase Auth settings | Password requirements: minimum 8, letters + digits. Consider "leaked password protection" on paid plans | **Action required by you** |
 | C3 | Edge Function CORS allows any origin when `ALLOWED_ORIGINS` is unset. CORS isn't authorization (a valid admin token is still required), but restricting it adds a layer | Low (config) | `supabase/functions/_shared/cors.ts` | Set `ALLOWED_ORIGINS` (and `SITE_URL`) to the live domain | **Action required by you** (DG §4) |
 | C4 | The built-in Supabase email sender is rate-limited and only sends to team addresses, so invites/resets may not arrive | Medium (availability) | Supabase Auth → SMTP | Configure custom SMTP | **Action required by you** |
@@ -46,7 +46,7 @@ Severity scale: **Critical** (exploitable data breach), **High**, **Medium**, **
 | L2 | "Signed in" activity entries were written by the browser and could be skipped or faked | Low | `activity_logs` | Record sign-ins with a server-side trigger; forbid browser inserts of `signed_in` | **Resolved**. Trigger on `auth.users.last_sign_in_at`; browser insert now rejected (tested) |
 | A6 | Admin-only error messages from `delete_category` may show short database messages | Info | `src/services/categoryService.js` | Messages are written by our function; admins only | **Accepted** |
 
-**No open Critical or High issues.** Every Medium code issue is resolved. The open Medium items are **dashboard settings you need to apply** (C1, C2, C4).
+**No open Critical or High issues.** Every Medium code issue is resolved. The open Medium items are **dashboard settings you need to apply** (C2, C4), plus **C1, public sign-up**, which you chose deliberately (an accepted risk with built-in safeguards).
 
 ---
 
@@ -55,7 +55,7 @@ Severity scale: **Critical** (exploitable data breach), **High**, **Medium**, **
 ### Authentication & sessions
 | Control | Evidence |
 |---|---|
-| No public registration page or link | Browser test: login page has no sign-up link |
+| Self sign-up never grants admin; approval mode blocks until activated; duplicate emails refused | DB tests + acceptance S1–S6 |
 | Invalid credentials and deactivated (banned) accounts rejected with safe messages | Browser tests |
 | Protected URLs typed directly redirect to `/login` (logged out) or `/dashboard` (member on admin URL) | Production acceptance E3 + Phase 5 test (8 admin URLs) |
 | Session persists across reloads; expired/revoked sessions → login with notice | Browser tests (Phase 2, acceptance E5) |
@@ -108,7 +108,7 @@ Severity scale: **Critical** (exploitable data breach), **High**, **Medium**, **
 ---
 
 ## 3. Recommendations after launch
-1. Apply C1–C4 before inviting members.
+1. Apply C2–C4 before launch, and keep **Confirm email** on for public sign-up (C1). Consider approval mode or CAPTCHA if unwanted accounts appear.
 2. Keep a second admin account for emergencies.
 3. Run `npm audit` and update dependencies every few months; re-run `npm run test:db` and `npm run build` after updates.
 4. Review Admin → Activity Logs periodically.

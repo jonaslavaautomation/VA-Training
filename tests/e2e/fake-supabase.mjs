@@ -16,6 +16,8 @@ export const state = {
     'announcement-images': { limit: 5 * 1024 * 1024, mimes: ['image/jpeg', 'image/png', 'image/webp'] },
   },
   objects: new Map(), tus: new Map(), signTokens: new Map(), emails: [], otps: new Map(), cspReports: [],
+  confirmEmail: false, // Supabase Auth → Confirm email
+  newAccountStatus: 'active', // portal_settings.new_account_status
 }
 let seq = 0
 const stamp = () => new Date(Date.now() + seq++).toISOString()
@@ -218,9 +220,31 @@ export function start(port) {
       const u = [...state.users.values()].find((x) => x.email === body.email)
       if (!u || u.password !== body.password) return send(res, 400, { code: 400, error_code: 'invalid_credentials', msg: 'Invalid login credentials' })
       if (u.banned) return send(res, 400, { code: 400, error_code: 'user_banned', msg: 'User is banned' })
+      if (u.unconfirmed) return send(res, 400, { code: 400, error_code: 'email_not_confirmed', msg: 'Email not confirmed' })
       state.authInfo.get(u.id).last_sign_in_at = now()
       log(u.id, 'signed_in') // emulates the on_auth_user_signed_in trigger (server-side sign-in record)
       return send(res, 200, issue(u.id))
+    }
+    if (path === '/auth/v1/signup' && req.method === 'POST') {
+      const email = String(body.email ?? '').toLowerCase()
+      const existing = [...state.users.values()].find((x) => x.email === email)
+      if (existing) {
+        // Real Supabase: an error when confirmation is off; a look-alike success when it's on (privacy).
+        if (!state.confirmEmail) return send(res, 422, { code: 422, error_code: 'user_already_exists', msg: 'User already registered' })
+        return send(res, 200, { id: randomUUID(), aud: 'authenticated', role: '', email, identities: [], user_metadata: {}, app_metadata: {}, created_at: now() })
+      }
+      if (String(body.password ?? '').length < 6) return send(res, 422, { code: 422, error_code: 'weak_password', msg: 'Password should be at least 6 characters' })
+      // handle_new_user trigger: role ALWAYS member (metadata role ignored), status from portal_settings
+      const id = addUser(email, body.password, { first: body.data?.first_name ?? '', last: body.data?.last_name ?? '', role: 'member', status: state.newAccountStatus })
+      const u = state.users.get(id)
+      if (state.confirmEmail) {
+        u.unconfirmed = true
+        state.emails.push(`confirm:${email}`)
+        return send(res, 200, { ...authUser(id), identities: [{ id }], confirmation_sent_at: now() })
+      }
+      state.authInfo.get(id).last_sign_in_at = now()
+      log(id, 'signed_in') // on_auth_user_signed_in trigger
+      return send(res, 200, issue(id))
     }
     if (path === '/auth/v1/token') { const id = state.refresh.get(body?.refresh_token); return id ? send(res, 200, issue(id)) : send(res, 400, { error_code: 'refresh_token_not_found', msg: 'Invalid Refresh Token' }) }
     if (path === '/auth/v1/user' && req.method === 'GET') return uid ? send(res, 200, authUser(uid)) : send(res, 401, { error_code: 'bad_jwt', msg: 'invalid JWT' })

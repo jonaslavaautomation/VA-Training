@@ -111,7 +111,8 @@ console.log('\nprofile creation trigger')
 {
   const rows = await q(`select email, role, status, first_name from public.profiles order by email`)
   rows.length === 3 ? ok('a profile is created for every auth user') : bad('profiles created', rows.length)
-  rows.every((r) => r.role === 'member' && r.status === 'inactive') ? ok('new profiles are always inactive members (metadata role ignored)') : bad('defaults', JSON.stringify(rows))
+  rows.every((r) => r.role === 'member') ? ok('new accounts are always members — a "role: admin" in sign-up metadata is ignored') : bad('role defaults', JSON.stringify(rows))
+  rows.every((r) => r.status === 'active') ? ok('self-registered accounts start active (portal_settings default)') : bad('status defaults', JSON.stringify(rows))
   rows.find((r) => r.email === 'owner@example.com') ? ok('email stored lower-cased') : bad('lowercase', JSON.stringify(rows))
 }
 
@@ -426,8 +427,8 @@ console.log('\nschema audit (phase 6)')
 await as('postgres', null, async () => {
   const tables = (await q(`select c.relname, c.relrowsecurity from pg_class c where c.relnamespace = 'public'::regnamespace and c.relkind = 'r' order by 1`))
   const names = tables.map((t) => t.relname).join(',')
-  names === 'activity_logs,announcements,categories,favorites,learning_progress,profiles,training_resources'
-    ? ok('exactly the 7 expected tables exist (no duplicates)') : bad('tables', names)
+  names === 'activity_logs,announcements,categories,favorites,learning_progress,portal_settings,profiles,training_resources'
+    ? ok('exactly the 8 expected tables exist (no duplicates)') : bad('tables', names)
   const noRls = tables.filter((t) => !t.relrowsecurity).map((t) => t.relname)
   noRls.length === 0 ? ok('Row Level Security is enabled on every table') : bad('RLS disabled on', noRls.join(','))
   const unindexed = await q(`
@@ -479,6 +480,40 @@ await as('authenticated', M3, async () => {
   await expectError('browsers can no longer write fake "signed in" entries', `insert into public.activity_logs (activity_type) values ('signed_in')`, /row-level security/)
   await expectRows('other learning activity can still be logged', `insert into public.activity_logs (activity_type) values ('watched') returning id`, 1)
   await expectError('handle_user_sign_in is not callable through the API', `select public.handle_user_sign_in()`, /permission denied|trigger functions can only be called as triggers/)
+})
+
+// ---- Self sign-up -------------------------------------------------------------
+console.log('\nself sign-up')
+const profileOf = async (email) => (await q(`select role, status from public.profiles where email = $1`, [email]))[0]
+await as('authenticated', M3, async () => {
+  await expectError('members cannot read portal settings', `select * from public.portal_settings`, /permission denied/)
+  await expectError('members cannot change portal settings', `update public.portal_settings set new_account_status = 'active'`, /permission denied/)
+})
+await as('anon', null, () => expectError('visitors cannot read portal settings', `select * from public.portal_settings`, /permission denied/))
+await as('postgres', null, async () => {
+  await q(`insert into auth.users (email, raw_user_meta_data) values ('selfie@example.com', '{"first_name":"Sam","role":"admin"}')`)
+  const a = await profileOf('selfie@example.com')
+  a.role === 'member' && a.status === 'active' ? ok('open mode: sign-up → active member, can learn immediately') : bad('open mode', JSON.stringify(a))
+
+  await q(`update public.portal_settings set new_account_status = 'inactive'`)
+  await q(`insert into auth.users (email) values ('waiting@example.com')`)
+  const b = await profileOf('waiting@example.com')
+  b.role === 'member' && b.status === 'inactive' ? ok('approval mode: sign-up → inactive until an admin activates it') : bad('approval mode', JSON.stringify(b))
+
+  await q(`delete from public.portal_settings`)
+  await q(`insert into auth.users (email) values ('nosetting@example.com')`)
+  ;(await profileOf('nosetting@example.com')).status === 'inactive' ? ok('fails closed: no settings row → new accounts inactive') : bad('fail closed', 'active')
+  await q(`insert into public.portal_settings (id, new_account_status) values (true, 'active')`)
+  await expectError('only one settings row can exist', `insert into public.portal_settings (id) values (false)`, /check constraint/)
+
+  // first-sign-in flag for the alert email
+  await q(`delete from net.calls`)
+  const [{ id: newbie }] = await q(`select id from auth.users where email = 'selfie@example.com'`)
+  await q(`update auth.users set last_sign_in_at = now() where id = $1`, [newbie])
+  await q(`update auth.users set last_sign_in_at = now() + interval '1 hour' where id = $1`, [newbie])
+  const c = await calls()
+  c.length === 2 && c[0].body.first_sign_in === true && c[1].body.first_sign_in === false && c[0].body.account_status === 'active'
+    ? ok('alert marks the first-ever sign-in ("New member joined"), later ones as normal') : bad('first sign-in flag', JSON.stringify(c.map((x) => x.body)))
 })
 
 console.log(`\n${passed} passed, ${failed} failed`)

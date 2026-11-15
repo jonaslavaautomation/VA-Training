@@ -10,10 +10,10 @@ export default function AccountInactivePage() {
         <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-red-50 text-red-600">
           <ShieldOff className="h-6 w-6" />
         </div>
-        <h1 className="text-xl font-semibold text-navy-900">Account deactivated</h1>
+        <h1 className="text-xl font-semibold text-navy-900">Account not active</h1>
         <p className="mt-2 text-sm text-slate-500">
-          The account <span className="font-medium text-slate-700">{user?.email}</span> is not currently active.
-          Please contact your training administrator to restore access.
+          The account <span className="font-medium text-slate-700">{user?.email}</span> is not active yet or has been deactivated.
+          New accounts may need approval from your training administrator — please contact them if you need access.
         </p>
         <Button variant="secondary" className="mt-6" onClick={signOut}>Sign out</Button>
       </div>

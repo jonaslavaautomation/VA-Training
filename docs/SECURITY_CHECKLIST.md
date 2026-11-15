@@ -25,7 +25,7 @@ You'll need: one admin account, two member accounts (A and B), and one deactivat
 
 ## Additional checks
 
-- [ ] **No public registration**: the login page has no sign-up link. API test **R5** is rejected.
+- [ ] **Create account**: a new self-registered account is a **member** (never admin), and follows the open/approval setting. API test **R5**.
 - [ ] **Forgot password**: the same message appears for existing and unknown emails. The reset link → "Choose a new password" → portal.
 - [ ] **Reset link reuse**: opening the same reset/invite link twice shows "Link expired" the second time.
 - [ ] **Expired session**: in DevTools → Application → Local Storage, corrupt the `sb-…-auth-token` value, then reload → `/login` with "Your session has ended".
@@ -56,7 +56,7 @@ H=(-H "apikey: $ANON" -H "Content-Type: application/json")
 | R2b | `curl -X PATCH "$URL/rest/v1/profiles?id=eq.$OTHER_ID" "${H[@]}" -H "Authorization: Bearer $MEMBER_JWT" -H "Prefer: return=representation" -d '{"first_name":"x"}'` | `[]`: nothing updated |
 | R3 | `curl -X POST "$URL/functions/v1/admin-members" "${H[@]}" -H "Authorization: Bearer $MEMBER_JWT" -d '{"action":"create","first_name":"a","last_name":"b","email":"x@example.com"}'` | `403` `forbidden` |
 | R4 | `curl "$URL/rest/v1/training_resources?select=*" "${H[@]}" -H "Authorization: Bearer $INACTIVE_JWT"` | `[]` (or `401` once the token expires) |
-| R5 | `curl -X POST "$URL/auth/v1/signup" "${H[@]}" -d '{"email":"intruder@example.com","password":"Passw0rd!"}'` | `422` "Signups not allowed". Even if sign-ups were left on, the new profile is inactive and can read nothing |
+| R5 | `curl -X POST "$URL/auth/v1/signup" "${H[@]}" -d '{"email":"<a test address>","password":"Passw0rd!","data":{"role":"admin"}}'` | Account created (sign-ups are on by design). In Table Editor → `profiles` its role is **member**, and its status matches `portal_settings.new_account_status` |
 | R6 | `curl -X POST "$URL/functions/v1/admin-members" "${H[@]}" -H "Authorization: Bearer $ADMIN_JWT" -d '{"action":"set_status","user_id":"<admin id>","status":"inactive"}'` | `400` `cannot_change_self` |
 | R7 | `curl "$URL/rest/v1/profiles?select=*" "${H[@]}" -H "Authorization: Bearer $ANON"` | `401`/`403` permission denied: anon has no table access |
 | R8 | `curl -X POST "$URL/rest/v1/rpc/bootstrap_first_admin" "${H[@]}" -H "Authorization: Bearer $MEMBER_JWT" -d '{"admin_email":"x@example.com"}'` | Permission denied / not found |

@@ -96,6 +96,7 @@ for (const width of WIDTHS) {
   await page.goto(`${BASE}/login`); await audit(page, '/login', width)
   if (width === 320) await page.screenshot({ path: `${SHOTS}320-login.png`, fullPage: true })
   await page.goto(`${BASE}/forgot-password`); await audit(page, '/forgot-password', width)
+  await page.goto(`${BASE}/signup`); await audit(page, '/signup', width)
 
   await signIn(page, 'maria.santos.with.a.long.email@academy-training.test', 'Member123!')
   for (const p of memberPages) {

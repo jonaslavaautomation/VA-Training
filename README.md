@@ -1,7 +1,7 @@
 # VA Training Academy
 
 A private online training portal for a Virtual Assistant training organization (about 50+ members).
-Administrators create member accounts and upload training PDFs and videos. Members sign in to watch, read, track their progress and save favorites. There's no public sign-up.
+New members create their own account on the sign-in page, or an administrator creates and invites them. Administrators upload training PDFs and videos. Members sign in to watch, read, track their progress and save favorites, and the administrator gets an email when a member signs in.
 
 | Document | Read it when… |
 |---|---|
@@ -17,6 +17,7 @@ Administrators create member accounts and upload training PDFs and videos. Membe
 ## What it does
 
 **Members**
+- **Create their own account** on the sign-in page (always as a member, never an admin), or accept an admin's invitation
 - Sign in, set and reset their password, and see a personal dashboard: progress, continue learning, recommendations, announcements.
 - Training Library with search, category and type filters, sorting, and "Load more".
 - Watch videos (resumes where they stopped); read PDFs inside the portal or download them.
@@ -70,7 +71,7 @@ Administrators create member accounts and upload training PDFs and videos. Membe
 | `npm run dev` | Run the site locally with live reload |
 | `npm run build` | Build the production version into `dist/` |
 | `npm run preview` | Serve that production build locally |
-| `npm run test:db` | Apply all migrations to a temporary database and run 167 security checks (no Supabase or internet needed) |
+| `npm run test:db` | Apply all migrations to a temporary database and run 176 security checks (no Supabase or internet needed) |
 | `npm run test:e2e` | Production acceptance test in Chrome against a simulated backend (needs Google Chrome) |
 | `npm run test:responsive` | Check every page at phone/tablet/desktop widths (needs Google Chrome) |
 
@@ -104,7 +105,7 @@ These go in `.env.local` (your computer) and in **Vercel → Project → Setting
 Full steps: **[DEPLOYMENT_GUIDE.md §2–6](DEPLOYMENT_GUIDE.md)**. Details: [supabase/README.md](supabase/README.md).
 
 1. **Back up first** if the project already has data (`pg_dump`, see below).
-2. **Database:** `npx supabase link --project-ref <ref>` then `npx supabase db push`. This applies the 7 files in `supabase/migrations/` in order:
+2. **Database:** `npx supabase link --project-ref <ref>` then `npx supabase db push`. This applies the 8 files in `supabase/migrations/` in order:
 
    | File | Adds |
    |---|---|
@@ -115,6 +116,7 @@ Full steps: **[DEPLOYMENT_GUIDE.md §2–6](DEPLOYMENT_GUIDE.md)**. Details: [su
    | `20261116100000_learning_progress_resume.sql` | video resume |
    | `20261117100000_admin_management.sql` | contact numbers, category visibility, announcements, audit log |
 | `20261118100000_login_alerts.sql` | server-side sign-in log + login alert emails |
+| `20261119100000_self_signup.sql` | Create account: new-account setting, first-sign-in alerts |
 
 3. **Storage buckets** are created by the migrations, all **private**:
 
@@ -128,7 +130,7 @@ Full steps: **[DEPLOYMENT_GUIDE.md §2–6](DEPLOYMENT_GUIDE.md)**. Details: [su
    The project-wide limit (Storage → Settings) also applies. **Free plan: 50 MB per file.**
 4. **Edge Functions:** `npx supabase functions deploy admin-members`, after setting the secrets above. Optional login alerts: `login-alert`, see [DEPLOYMENT_GUIDE.md §4b](DEPLOYMENT_GUIDE.md).
 5. **Auth settings:**
-   - turn **off** "Allow new users to sign up";
+   - turn **on** "Allow new users to sign up" (for the Create account page) and keep **Confirm email** on;
    - password minimum 8 with letters and digits;
    - custom SMTP;
    - the invite and reset email templates;
@@ -141,7 +143,13 @@ Full steps: **[DEPLOYMENT_GUIDE.md §2–6](DEPLOYMENT_GUIDE.md)**. Details: [su
 This only works while no admin exists.
 
 ### Creating member accounts
-Sign in as admin → **Members → Add member**. Enter the name, email, optional contact number and role.
+**Option 1 — members sign up themselves:** the sign-in page has **Create an account**.
+- With Supabase **Confirm email** on (recommended), they confirm by email first, then sign in.
+- New accounts can learn immediately (default). To approve each new person first, run this once in the SQL Editor:
+  `update public.portal_settings set new_account_status = 'inactive';`
+  New accounts then wait until you activate them in **Admin → Members**, and the alert email says "awaiting approval". Switch back with `'active'`.
+
+**Option 2 — you create them:** sign in as admin → **Members → Add member**. Enter the name, email, optional contact number and role.
 - **Active:** they get an invitation email to set their password.
 - **Inactive:** no email yet; reactivate them later and press ✉ to send the invite.
 
@@ -213,7 +221,7 @@ va-training-academy/
 ├── DEPLOYMENT_GUIDE.md · PRODUCTION_CHECKLIST.md · SECURITY_AUDIT.md · TEST_RESULTS.md
 ├── docs/SECURITY_CHECKLIST.md # Manual + API security tests
 ├── supabase/
-│   ├── migrations/            # 7 database migrations (apply in order)
+│   ├── migrations/            # 8 database migrations (apply in order)
 │   ├── functions/admin-members/   # Server function for member management
 │   ├── functions/login-alert/     # Emails the admin when a member signs in
 │   ├── setup/                 # One-time SQL: create_admins.sql, login_alerts.sql

@@ -5,11 +5,12 @@ project_id = "va-training-academy"
 [auth]
 site_url = "http://localhost:5173"
 additional_redirect_urls = ["http://localhost:5173/reset-password"]
-# No public registration: only admins create accounts (via the admin-members function).
-enable_signup = false
+# Public "Create account" is on; new accounts are always members (see migration 20261119100000).
+enable_signup = true
 
 [auth.email]
-enable_signup = false
+enable_signup = true
+enable_confirmations = true
 
 [functions.admin-members]
 # The function verifies the caller's token itself with auth.getUser() and then

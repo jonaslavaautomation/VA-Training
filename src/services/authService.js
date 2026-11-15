@@ -22,6 +22,27 @@ export async function signInWithPassword(email, password, remember = true) {
  * Signs out everywhere (revokes all refresh tokens). If the server can't be
  * reached, the local session is still cleared so the user is never stuck.
  */
+/**
+ * Public "Create account". The role is always 'member' (set by the database,
+ * never from this metadata). Returns { session, needsConfirmation }:
+ *  - Supabase "Confirm email" OFF → a session is returned (signed in right away)
+ *  - Confirm email ON → no session; the user confirms via email, then signs in.
+ *    (For privacy Supabase answers the same way when the email already exists.)
+ */
+export async function signUp({ firstName, lastName, email, password }) {
+  setRememberMe(true)
+  const { data, error } = await supabase.auth.signUp({
+    email: email.trim().toLowerCase(),
+    password,
+    options: {
+      data: { first_name: firstName.trim(), last_name: lastName.trim() },
+      emailRedirectTo: `${window.location.origin}/login?type=signup`,
+    },
+  })
+  if (error) throw normalizeAuthError(error)
+  return { session: data.session, needsConfirmation: !data.session }
+}
+
 export async function signOut() {
   const { error } = await supabase.auth.signOut({ scope: 'global' })
   if (error) await supabase.auth.signOut({ scope: 'local' })
@@ -152,10 +173,16 @@ function normalizeAuthError(error) {
   if (code === 'invalid_credentials' || msg.includes('invalid login credentials')) {
     friendly = 'Incorrect email or password.'
     normalizedCode = 'invalid_credentials'
+  } else if (code === 'user_already_exists' || code === 'email_exists' || msg.includes('already registered')) {
+    friendly = 'An account with this email already exists. Sign in instead, or use “Forgot password?”.'
+  } else if (code === 'signup_disabled' || msg.includes('signups not allowed')) {
+    friendly = 'New sign-ups are currently closed. Please contact your training administrator.'
+  } else if (code === 'email_address_invalid' || msg.includes('email address') && msg.includes('invalid')) {
+    friendly = 'Please use a valid email address.'
   } else if (code === 'user_banned' || msg.includes('banned')) {
     friendly = 'This account has been deactivated. Please contact your training administrator.'
   } else if (code === 'email_not_confirmed' || msg.includes('email not confirmed')) {
-    friendly = 'Please accept your invitation email and set a password before signing in.'
+    friendly = 'Please confirm your email first — open the link we emailed you (invitation or sign-up confirmation), then sign in.'
   } else if (code === 'over_request_rate_limit' || code === 'over_email_send_rate_limit' || msg.includes('rate limit') || error?.status === 429) {
     friendly = 'Too many attempts. Please wait a minute and try again.'
   } else if (code === 'weak_password' || msg.includes('password should be')) {
