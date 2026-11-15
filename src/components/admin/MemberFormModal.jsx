@@ -14,8 +14,9 @@ const selectClass =
 /**
  * Add a new member (sends an invitation when active) or edit an existing one.
  * `member` = null → create. `isSelf` locks role/status for the signed-in admin.
+ * `canChangeEmail` is false when the admin-members Edge Function isn't deployed.
  */
-export default function MemberFormModal({ open, member, isSelf = false, onClose, onSaved }) {
+export default function MemberFormModal({ open, member, isSelf = false, canChangeEmail = true, onClose, onSaved }) {
   const isEdit = Boolean(member)
   const [form, setForm] = useState(() => ({
     firstName: member?.first_name ?? '',
@@ -42,7 +43,7 @@ export default function MemberFormModal({ open, member, isSelf = false, onClose,
     const next = {
       firstName: validateName(form.firstName, 'First name'),
       lastName: validateName(form.lastName, 'Last name'),
-      email: validateEmail(form.email),
+      email: isEdit && !canChangeEmail ? undefined : validateEmail(form.email),
       phone: validatePhone(form.phone),
     }
     setErrors(next)
@@ -62,7 +63,7 @@ export default function MemberFormModal({ open, member, isSelf = false, onClose,
         const { member: created, invited } = await createMember({ ...values, status: form.status })
         onSaved(created, { created: true, invited })
       } else {
-        let saved = await updateMember(member.id, { ...values, role: isSelf ? undefined : values.role })
+        let saved = await updateMember(member.id, { ...values, role: isSelf ? undefined : values.role }, { previousEmail: member.email })
         if (!isSelf && form.status !== member.status) saved = await setMemberStatus(member.id, form.status)
         onSaved(saved, { created: false, statusChanged: form.status !== member.status })
       }
@@ -113,7 +114,8 @@ export default function MemberFormModal({ open, member, isSelf = false, onClose,
           value={form.email}
           onChange={update('email')}
           error={errors.email}
-          hint={isEdit ? 'Changing the email changes the address this member signs in with.' : undefined}
+          disabled={isEdit && !canChangeEmail}
+          hint={isEdit ? (canChangeEmail ? 'Changing the email changes the address this member signs in with.' : 'The email this member signs in with.') : undefined}
         />
         <Input label="Contact number (optional)" type="tel" icon={Phone} autoComplete="off" maxLength={32} value={form.phone} onChange={update('phone')} error={errors.phone} placeholder="+63 917 555 0101" />
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">

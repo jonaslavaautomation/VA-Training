@@ -1,4 +1,4 @@
-import { CheckCircle2, FileText, Library, Megaphone, PencilLine, PlayCircle, Upload, UserCheck, UserPlus, Users, UserX } from 'lucide-react'
+import { CheckCircle2, FileText, Library, Megaphone, PencilLine, PlayCircle, Upload, UserCheck, Users, UserX } from 'lucide-react'
 import PageHeader from '@/components/ui/PageHeader'
 import StatCard from '@/components/ui/StatCard'
 import Alert from '@/components/ui/Alert'
@@ -37,7 +37,7 @@ export default function AdminDashboardPage() {
         actions={
           <>
             <LinkButton to="/admin/announcements?new=1" variant="secondary" aria-label="New announcement"><Megaphone className="h-4 w-4" /> <span className="hidden sm:inline">Announcement</span></LinkButton>
-            <LinkButton to="/admin/members?new=1" variant="secondary" aria-label="Add member"><UserPlus className="h-4 w-4" /> <span className="hidden sm:inline">Add member</span></LinkButton>
+            <LinkButton to="/admin/members" variant="secondary" aria-label="Members"><Users className="h-4 w-4" /> <span className="hidden sm:inline">Members</span></LinkButton>
             <LinkButton to="/admin/upload"><Upload className="h-4 w-4" /> Upload</LinkButton>
           </>
         }

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { ArrowLeft, BookOpen, CheckCircle2, Clock, Heart, Mail, Pencil, UserCheck, UserX } from 'lucide-react'
 import Card from '@/components/ui/Card'
@@ -16,7 +16,7 @@ import { lastSignIn, MemberStatusBadge, RoleBadge } from '@/components/admin/Mem
 import { useAsync } from '@/hooks/useAsync'
 import { useAuth } from '@/hooks/useAuth'
 import { useToast } from '@/hooks/useToast'
-import { getMemberDetails, sendAccessEmail, setMemberStatus } from '@/services/memberService'
+import { getMemberDetails, isAdminFunctionAvailable, sendAccessEmail, setMemberStatus } from '@/services/memberService'
 import { ACTIVITY_LABELS } from '@/config/activity'
 import { formatDate, fullName, timeAgo } from '@/lib/format'
 import { toUserMessage } from '@/lib/errors'
@@ -57,6 +57,14 @@ export default function MemberDetailsPage() {
   const [editing, setEditing] = useState(false)
   const [confirm, setConfirm] = useState(null)
   const [busy, setBusy] = useState(null)
+  // Access emails and email changes need the optional admin-members Edge Function.
+  const [emailTools, setEmailTools] = useState(false)
+
+  useEffect(() => {
+    let active = true
+    isAdminFunctionAvailable().then((ok) => active && setEmailTools(ok))
+    return () => { active = false }
+  }, [])
 
   if (loading) {
     return (
@@ -121,7 +129,7 @@ export default function MemberDetailsPage() {
           </div>
           <div className="flex flex-wrap gap-2">
             <Button variant="secondary" size="sm" onClick={() => setEditing(true)}><Pencil className="h-4 w-4" /> Edit</Button>
-            <Button variant="secondary" size="sm" onClick={email} loading={busy === 'email'} disabled={m.status !== 'active'}><Mail className="h-4 w-4" /> Send access email</Button>
+            {emailTools && <Button variant="secondary" size="sm" onClick={email} loading={busy === 'email'} disabled={m.status !== 'active'}><Mail className="h-4 w-4" /> Send access email</Button>}
             {!isSelf && (m.status === 'active' ? (
               <Button variant="danger" size="sm" onClick={() => setConfirm('inactive')}><UserX className="h-4 w-4" /> Deactivate</Button>
             ) : (
@@ -193,6 +201,7 @@ export default function MemberDetailsPage() {
           open
           member={m}
           isSelf={isSelf}
+          canChangeEmail={emailTools}
           onClose={() => setEditing(false)}
           onSaved={(saved, { statusChanged } = {}) => {
             setEditing(false)

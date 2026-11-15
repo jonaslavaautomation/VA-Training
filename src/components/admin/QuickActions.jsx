@@ -1,9 +1,9 @@
 import { Link } from 'react-router-dom'
-import { FolderOpen, FolderTree, Megaphone, Upload, UserPlus, Zap } from 'lucide-react'
+import { FolderOpen, FolderTree, Megaphone, Upload, Users, Zap } from 'lucide-react'
 import Card from '@/components/ui/Card'
 
 const actions = [
-  { to: '/admin/members?new=1', label: 'Add new member', icon: UserPlus, tint: 'bg-navy-50 text-navy-700' },
+  { to: '/admin/members', label: 'Manage members', icon: Users, tint: 'bg-navy-50 text-navy-700' },
   { to: '/admin/upload', label: 'Upload training material', icon: Upload, tint: 'bg-mint-50 text-mint-700' },
   { to: '/admin/resources', label: 'Manage resources', icon: FolderOpen, tint: 'bg-sky-50 text-sky-700' },
   { to: '/admin/categories', label: 'Manage categories', icon: FolderTree, tint: 'bg-violet-50 text-violet-700' },

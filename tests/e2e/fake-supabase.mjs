@@ -18,6 +18,7 @@ export const state = {
   objects: new Map(), tus: new Map(), signTokens: new Map(), emails: [], otps: new Map(), cspReports: [],
   confirmEmail: false, // Supabase Auth → Confirm email
   newAccountStatus: 'active', // portal_settings.new_account_status
+  adminFunctionDeployed: true, // optional admin-members Edge Function (email features)
 }
 let seq = 0
 const stamp = () => new Date(Date.now() + seq++).toISOString()
@@ -266,6 +267,7 @@ export function start(port) {
 
     // ---------------- Functions
     if (path === '/functions/v1/admin-members') {
+      if (!state.adminFunctionDeployed) return send(res, 404, { code: 'NOT_FOUND', message: 'Requested function was not found' })
       if (!uid) return send(res, 401, { error: { code: 'unauthorized', message: 'Please sign in again.' } })
       const [status, payload] = adminMembers(uid, body ?? {})
       return send(res, status, payload)
@@ -338,6 +340,36 @@ export function start(port) {
     if (path === '/rest/v1/rpc/admin_member_auth_info') {
       if (!isAdmin(uid)) return rls(res, 'Only administrators can do this.')
       return send(res, 200, body.p_ids.map((id) => state.authInfo.get(id)).filter(Boolean))
+    }
+    // admin_set_member_status / admin_update_member (migration 010): same rules as the SQL functions
+    if (path === '/rest/v1/rpc/admin_set_member_status' || path === '/rest/v1/rpc/admin_update_member') {
+      if (!isAdmin(uid)) return rls(res, 'Only administrators can manage members.')
+      const reject = (message) => send(res, 400, { code: 'P0001', message, details: null, hint: null })
+      const p = state.profiles.get(body.p_user_id)
+      if (path.endsWith('status')) {
+        if (!['active', 'inactive'].includes(body.p_status)) return reject('Invalid status.')
+        if (body.p_user_id === uid) return reject('You cannot change the status of your own account.')
+        if (!p) return reject('Member not found.')
+        if (p.status !== body.p_status) {
+          p.status = body.p_status
+          state.users.get(p.id).banned = body.p_status === 'inactive'
+          log(uid, body.p_status === 'active' ? 'member_activated' : 'member_deactivated', 'member', p.id, label(p))
+        }
+        return send(res, 200, p)
+      }
+      if (!p) return reject('Member not found.')
+      const tidy = (v) => String(v ?? '').replace(/\s+/g, ' ').trim()
+      const next = { first_name: tidy(body.p_first_name), last_name: tidy(body.p_last_name), phone: tidy(body.p_phone) || null }
+      if (!next.first_name || !next.last_name) return reject('First and last name are required.')
+      if (next.phone && !/^[0-9+()\-. ]+$/.test(next.phone)) return reject('Enter a valid contact number (digits, spaces, + ( ) - . only).')
+      const role = body.p_role ?? p.role
+      if (role !== p.role && body.p_user_id === uid) return reject('You cannot change your own role.')
+      const fields = Object.keys(next).filter((f) => next[f] !== p[f])
+      const from = p.role
+      Object.assign(p, next, { role })
+      if (fields.length) log(uid, 'member_updated', 'member', p.id, label(p), { fields })
+      if (role !== from) log(uid, 'member_role_changed', 'member', p.id, label(p), { from, to: role })
+      return send(res, 200, p)
     }
     if (path === '/rest/v1/rpc/find_orphaned_training_files') return isAdmin(uid) ? send(res, 200, []) : rls(res, 'Only administrators can do this.')
     if (path === '/rest/v1/rpc/delete_category') {

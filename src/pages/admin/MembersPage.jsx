@@ -14,7 +14,7 @@ import MemberFormModal from '@/components/admin/MemberFormModal'
 import { lastSignIn, MemberStatusBadge, RoleBadge } from '@/components/admin/MemberBadges'
 import { useAuth } from '@/hooks/useAuth'
 import { useToast } from '@/hooks/useToast'
-import { listMembersPage, MEMBER_PAGE_SIZE, sendAccessEmail, setMemberStatus } from '@/services/memberService'
+import { isAdminFunctionAvailable, listMembersPage, MEMBER_PAGE_SIZE, sendAccessEmail, setMemberStatus } from '@/services/memberService'
 import { formatDate, fullName } from '@/lib/format'
 import { toUserMessage } from '@/lib/errors'
 
@@ -54,6 +54,14 @@ export default function MembersPage() {
   const [form, setForm] = useState(null) // { member: null | profile }
   const [confirm, setConfirm] = useState(null) // { member, status }
   const [busy, setBusy] = useState(null)
+  // Adding members and access emails need the optional admin-members Edge Function.
+  const [emailTools, setEmailTools] = useState(null) // null while checking
+
+  useEffect(() => {
+    let active = true
+    isAdminFunctionAvailable().then((ok) => active && setEmailTools(ok))
+    return () => { active = false }
+  }, [])
 
   useEffect(() => {
     const t = setTimeout(() => setDebounced(query), 300)
@@ -74,12 +82,12 @@ export default function MembersPage() {
 
   // /admin/members?new=1 (dashboard quick action) opens the Add member dialog.
   useEffect(() => {
-    if (params.get('new') !== '1') return
-    setForm({ member: null })
+    if (params.get('new') !== '1' || emailTools === null) return
+    if (emailTools) setForm({ member: null })
     const next = new URLSearchParams(params)
     next.delete('new')
     setParams(next, { replace: true })
-  }, [params, setParams])
+  }, [params, setParams, emailTools])
 
   function handleSaved(member, { created, invited, statusChanged } = {}) {
     setForm(null)
@@ -121,12 +129,14 @@ export default function MembersPage() {
       <div className="flex items-center justify-end gap-0.5">
         <IconAction label={`View ${fullName(m) || m.email}`} icon={Eye} to={`/admin/members/${m.id}`} />
         <IconAction label={`Edit ${fullName(m) || m.email}`} icon={Pencil} onClick={() => setForm({ member: m })} />
-        <IconAction
-          label={m.status === 'active' ? 'Send invitation / password reset email' : 'Reactivate to send emails'}
-          icon={Mail}
-          onClick={() => handleSendEmail(m)}
-          disabled={m.status !== 'active' || busy === `email:${m.id}`}
-        />
+        {emailTools && (
+          <IconAction
+            label={m.status === 'active' ? 'Send invitation / password reset email' : 'Reactivate to send emails'}
+            icon={Mail}
+            onClick={() => handleSendEmail(m)}
+            disabled={m.status !== 'active' || busy === `email:${m.id}`}
+          />
+        )}
         {m.status === 'active' ? (
           <IconAction label={isSelf ? 'You can’t deactivate yourself' : `Deactivate ${fullName(m) || m.email}`} icon={UserX} tone="danger" disabled={isSelf} onClick={() => setConfirm({ member: m, status: 'inactive' })} />
         ) : (
@@ -155,8 +165,8 @@ export default function MembersPage() {
     <>
       <PageHeader
         title="Members"
-        description="Create accounts, manage access and review each member’s learning."
-        actions={<Button onClick={() => setForm({ member: null })} disabled={isPreview}><UserPlus className="h-4 w-4" /> Add member</Button>}
+        description="Activate or deactivate accounts and review each member’s learning."
+        actions={emailTools ? <Button onClick={() => setForm({ member: null })} disabled={isPreview}><UserPlus className="h-4 w-4" /> Add member</Button> : null}
       />
 
       {state.error && !state.items.length ? (
@@ -215,8 +225,8 @@ export default function MembersPage() {
               {filtered ? (
                 <EmptyState icon={Search} title="No matching members" description="Try a different name, email, status or role." />
               ) : (
-                <EmptyState icon={Users} title="No members yet" description="Add your first member to send them an invitation.">
-                  <Button onClick={() => setForm({ member: null })}><UserPlus className="h-4 w-4" /> Add member</Button>
+                <EmptyState icon={Users} title="No members yet" description="New members appear here as soon as they create an account.">
+                  {emailTools && <Button onClick={() => setForm({ member: null })}><UserPlus className="h-4 w-4" /> Add member</Button>}
                 </EmptyState>
               )}
             </div>
@@ -267,7 +277,7 @@ export default function MembersPage() {
       )}
 
       {form && (
-        <MemberFormModal open member={form.member} isSelf={form.member?.id === user?.id} onClose={() => setForm(null)} onSaved={handleSaved} />
+        <MemberFormModal open member={form.member} isSelf={form.member?.id === user?.id} canChangeEmail={emailTools} onClose={() => setForm(null)} onSaved={handleSaved} />
       )}
 
       <Modal

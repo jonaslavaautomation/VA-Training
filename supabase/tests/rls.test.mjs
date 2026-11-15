@@ -52,7 +52,12 @@ await db.exec(`
 
   -- Stand-ins for Supabase Vault, pg_net and auth.sessions (login alerts).
   create schema vault;
-  create table vault.decrypted_secrets (name text primary key, decrypted_secret text);
+  create table vault.secrets (id uuid primary key default gen_random_uuid(), name text unique, secret text, description text);
+  create view vault.decrypted_secrets as select id, name, secret as decrypted_secret from vault.secrets;
+  create function vault.create_secret(new_secret text, new_name text default null, new_description text default '') returns uuid
+    language sql as $$ insert into vault.secrets (name, secret, description) values (new_name, new_secret, new_description) returning id $$;
+  create function vault.update_secret(secret_id uuid, new_secret text default null, new_name text default null, new_description text default null) returns void
+    language sql as $$ update vault.secrets set secret = coalesce(new_secret, secret) where id = secret_id $$;
   create schema net;
   create table net.calls (id bigserial primary key, url text, body jsonb, headers jsonb);
   create table net.config (fail boolean default false);
@@ -447,39 +452,70 @@ await as('postgres', null, async () => {
   anonGrants.length === 0 ? ok('anon role has no table privileges') : bad('anon grants', [...new Set(anonGrants.map((g) => g.table_name))].join(','))
 })
 
-// ---- Login alerts -------------------------------------------------------------
-console.log('\nlogin alerts')
+// ---- Sign-in log (no emails) + admin member controls ---------------------------
+console.log('\nsign-in log (no alert emails)')
 const signIns = async (uid) => (await q(`select count(*)::int as n from public.activity_logs where user_id = $1 and activity_type = 'signed_in'`, [uid]))[0].n
 const calls = async () => (await q(`select url, body, headers from net.calls order by id`))
 await as('postgres', null, async () => {
+  // Old alert settings left over from an earlier setup must not cause any email.
+  await q(`insert into vault.secrets (name, secret) values ('resend_api_key', 're_old_key_123456'), ('login_alert_to', 'admin@example.com')`)
   const beforeM3 = await signIns(M3)
   await q(`update auth.users set last_sign_in_at = now() where id = $1`, [M3])
-  ;(await signIns(M3)) === beforeM3 + 1 ? ok('member sign-in is recorded server-side in activity_logs') : bad('sign-in log', await signIns(M3))
-  ;(await calls()).length === 0 ? ok('no email request while alerts are not configured (and sign-in still works)') : bad('unexpected call', JSON.stringify(await calls()))
-
-  await q(`insert into vault.decrypted_secrets values ('login_alert_url', 'https://ref.supabase.co/functions/v1/login-alert'), ('login_alert_secret', 's3cret')`)
-  await q(`insert into auth.sessions (user_id, user_agent, ip) values ($1, 'Mozilla/5.0 (Windows NT 10.0) Chrome/130', '203.0.113.7')`, [M3])
-  await q(`update auth.users set last_sign_in_at = now() + interval '1 minute' where id = $1`, [M3])
-  const c = await calls()
-  c.length === 1 && c[0].url.endsWith('/login-alert') && c[0].headers['x-alert-secret'] === 's3cret' && c[0].body.email === 'm3@example.com' && c[0].body.user_agent.includes('Chrome') && c[0].body.ip === '203.0.113.7'
-    ? ok('member sign-in sends one alert request (with secret, email, device)') : bad('alert call', JSON.stringify(c))
-
+  ;(await signIns(M3)) === beforeM3 + 1 ? ok('member sign-in is recorded in Activity Logs') : bad('sign-in log', await signIns(M3))
+  ;(await calls()).length === 0 ? ok('no email is sent on sign-in (alerts removed), even with an old key stored') : bad('email sent', JSON.stringify(await calls()))
   const beforeA = await signIns(A)
-  await q(`update auth.users set last_sign_in_at = now() + interval '2 minutes' where id = $1`, [A])
-  ;(await signIns(A)) === beforeA + 1 && (await calls()).length === 1 ? ok('admin sign-in is logged but sends no email (members only)') : bad('admin alert', JSON.stringify(await calls()))
-
-  await q(`update auth.users set email = 'm3@example.com' where id = $1`, [M3])
-  ;(await calls()).length === 1 ? ok('other account updates (not sign-ins) send nothing') : bad('non sign-in triggered', (await calls()).length)
-
-  await q(`update net.config set fail = true`)
-  const rows = await q(`update auth.users set last_sign_in_at = now() + interval '3 minutes' where id = $1 returning id`, [M3])
-  rows.length === 1 ? ok('a failing alert can never block the sign-in') : bad('sign-in blocked', rows.length)
-  await q(`update net.config set fail = false`)
+  await q(`update auth.users set last_sign_in_at = now() + interval '1 minute' where id = $1`, [A])
+  ;(await signIns(A)) === beforeA + 1 ? ok('admin sign-in is recorded too') : bad('admin log', await signIns(A))
+  const fnGone = (await q(`select count(*)::int as n from pg_proc where proname in ('describe_device', 'html_escape') and pronamespace = 'public'::regnamespace`))[0].n
+  fnGone === 0 ? ok('email helper functions removed') : bad('helpers still exist', fnGone)
 })
 await as('authenticated', M3, async () => {
-  await expectError('browsers can no longer write fake "signed in" entries', `insert into public.activity_logs (activity_type) values ('signed_in')`, /row-level security/)
+  await expectError('browsers cannot write fake "signed in" entries', `insert into public.activity_logs (activity_type) values ('signed_in')`, /row-level security/)
   await expectRows('other learning activity can still be logged', `insert into public.activity_logs (activity_type) values ('watched') returning id`, 1)
   await expectError('handle_user_sign_in is not callable through the API', `select public.handle_user_sign_in()`, /permission denied|trigger functions can only be called as triggers/)
+})
+
+console.log('\nadmin member controls (no Edge Function needed)')
+await as('authenticated', M3, async () => {
+  await expectError('members cannot deactivate anyone', `select public.admin_set_member_status($1, 'inactive')`, /Only administrators/, [A])
+  await expectError('members cannot reactivate themselves', `select public.admin_set_member_status($1, 'active')`, /Only administrators/, [M3])
+  await expectError('members cannot edit members or promote themselves', `select public.admin_update_member($1, 'X', 'Y', null, 'admin')`, /Only administrators/, [M3])
+})
+await as('anon', null, () => expectError('visitors cannot call admin controls', `select public.admin_set_member_status($1, 'inactive')`, /permission denied/, [M3]))
+await as('authenticated', A, async () => {
+  const [r1] = await q(`select public.admin_set_member_status($1, 'inactive') as m`, [M3])
+  r1.m.status === 'inactive' && r1.m.id === M3 ? ok('admin deactivates a member (returns the updated profile)') : bad('deactivate', JSON.stringify(r1))
+  await expectError('admin cannot deactivate their own account', `select public.admin_set_member_status($1, 'inactive')`, /own account/, [A])
+  await expectError('invalid status rejected', `select public.admin_set_member_status($1, 'banned')`, /Invalid status/, [M3])
+  await expectError('unknown member rejected', `select public.admin_set_member_status(gen_random_uuid(), 'active')`, /not found/)
+})
+await as('authenticated', M3, async () => {
+  await expectRows('deactivated member is blocked from training', `select * from public.training_resources`, 0)
+  await expectRows('…but still sees their own profile (shows "Account not active")', `select status from public.profiles`, 1)
+})
+await as('postgres', null, async () => {
+  const kept = (await q(`select count(*)::int as n from public.learning_progress where user_id = $1`, [M3]))[0].n
+  kept > 0 ? ok('deactivation keeps the member’s learning records') : bad('records lost', kept)
+  const logged = (await q(`select user_id from public.activity_logs where activity_type = 'member_deactivated' and target_id = $1`, [M3]))
+  logged.length === 1 && logged[0].user_id === A ? ok('deactivation recorded in the audit log with the admin as actor') : bad('audit', JSON.stringify(logged))
+})
+await as('authenticated', A, async () => {
+  const [r2] = await q(`select public.admin_set_member_status($1, 'active') as m`, [M3])
+  r2.m.status === 'active' ? ok('admin reactivates the member') : bad('reactivate', JSON.stringify(r2))
+})
+await as('authenticated', M3, () => expectRows('reactivated member can open training again', `select * from public.training_resources where status = 'published'`, 1))
+await as('authenticated', A, async () => {
+  const [u] = await q(`select public.admin_update_member($1, ' Mia ', 'Lopez  Cruz', '+63 917 000 1111', null) as m`, [M3])
+  u.m.first_name === 'Mia' && u.m.last_name === 'Lopez Cruz' && u.m.phone === '+63 917 000 1111' ? ok('admin edits name and contact number (tidied)') : bad('edit', JSON.stringify(u))
+  await expectError('names with < or > rejected', `select public.admin_update_member($1, '<script>', 'X', null, null)`, /without < or >/, [M3])
+  await expectError('bad contact number rejected', `select public.admin_update_member($1, 'Mia', 'L', 'call me', null)`, /valid contact number/, [M3])
+  const [pr] = await q(`select public.admin_update_member($1, 'Mia', 'Lopez Cruz', null, 'admin') as m`, [M3])
+  pr.m.role === 'admin' ? ok('admin can promote a member to administrator') : bad('promote', JSON.stringify(pr))
+  const [dm] = await q(`select public.admin_update_member($1, 'Mia', 'Lopez Cruz', null, 'member') as m`, [M3])
+  dm.m.role === 'member' ? ok('…and demote them again') : bad('demote', JSON.stringify(dm))
+  await expectError('admin cannot change their own role', `select public.admin_update_member($1, 'Olive', 'Owner', null, 'member')`, /own role/, [A])
+  const roleLog = await q(`select details from public.activity_logs where activity_type = 'member_role_changed' and target_id = $1 order by created_at`, [M3])
+  roleLog.length === 2 && roleLog[0].details.to === 'admin' ? ok('role changes recorded in the audit log (from → to)') : bad('role audit', JSON.stringify(roleLog))
 })
 
 // ---- Self sign-up -------------------------------------------------------------
@@ -506,14 +542,6 @@ await as('postgres', null, async () => {
   await q(`insert into public.portal_settings (id, new_account_status) values (true, 'active')`)
   await expectError('only one settings row can exist', `insert into public.portal_settings (id) values (false)`, /check constraint/)
 
-  // first-sign-in flag for the alert email
-  await q(`delete from net.calls`)
-  const [{ id: newbie }] = await q(`select id from auth.users where email = 'selfie@example.com'`)
-  await q(`update auth.users set last_sign_in_at = now() where id = $1`, [newbie])
-  await q(`update auth.users set last_sign_in_at = now() + interval '1 hour' where id = $1`, [newbie])
-  const c = await calls()
-  c.length === 2 && c[0].body.first_sign_in === true && c[1].body.first_sign_in === false && c[0].body.account_status === 'active'
-    ? ok('alert marks the first-ever sign-in ("New member joined"), later ones as normal') : bad('first sign-in flag', JSON.stringify(c.map((x) => x.body)))
 })
 
 console.log(`\n${passed} passed, ${failed} failed`)

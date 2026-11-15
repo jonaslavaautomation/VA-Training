@@ -73,7 +73,7 @@ Backups contain member emails and account data, so treat them as confidential. K
 
 ## 3. Set up the Supabase database
 
-The database is created by 8 migration files in `supabase/migrations/`. They run **in filename order**:
+The database is created by 9 migration files in `supabase/migrations/`. They run **in filename order**:
 
 | # | File | What it does | Changes existing data? |
 |---|---|---|---|
@@ -83,8 +83,10 @@ The database is created by 8 migration files in `supabase/migrations/`. They run
 | 4 | `20261115100000_training_storage.sql` | Private storage buckets and file rules | No |
 | 5 | `20261116100000_learning_progress_resume.sql` | Video resume columns | No (adds columns, default 0) |
 | 6 | `20261117100000_admin_management.sql` | Contact numbers, category visibility, announcements, audit log | Converts `announcements.published` → `status`, then removes the old column |
-| 7 | `20261118100000_login_alerts.sql` | Server-side sign-in log + member login alert emails | No (adds a trigger and a function) |
-| 8 | `20261119100000_self_signup.sql` | "Create account": new-account setting + first-sign-in alerts | No (adds a settings table) |
+| 7 | `20261118100000_login_alerts.sql` | Server-side sign-in log | No (adds a trigger and a function) |
+| 8 | `20261119100000_self_signup.sql` | "Create account": new-account setting | No (adds a settings table) |
+| 9 | `20261120100000_direct_login_alert_email.sql` | Alert emails (superseded by 10) | No (replaces a function) |
+| 10 | `20261121100000_remove_alerts_admin_status.sql` | Removes alert emails; admin activate/deactivate/edit in the database | No (deletes only stored alert settings) |
 
 None of them delete members, progress, favorites, resources or files.
 
@@ -105,7 +107,7 @@ Dashboard → **SQL Editor** → open each file that hasn't been applied yet, in
 
 ## 4. Deploy the Edge Function
 
-The `admin-members` function creates, edits and deactivates members. It's the only code that uses the secret service-role key, which Supabase provides to it automatically.
+**Optional.** The `admin-members` function adds members by invitation email, re-sends access emails and changes a member's email. Activate/deactivate and editing names, contact numbers and roles work without it. It's the only code that uses the secret service-role key, which Supabase provides to it automatically.
 
 ```bash
 npx supabase secrets set \
@@ -120,30 +122,34 @@ npx supabase functions deploy admin-members
 
 **Check:** Dashboard → **Edge Functions** lists `admin-members`.
 
-### 4b. Login alert emails (member sign-ins → your inbox)
+### 4b. Create account + member controls (copy-paste, no terminal)
 
-Every time a **member** signs in, an email goes to the administrator saying who signed in, when, and from which device, with a link to their profile. A member's **first** sign-in (e.g. right after creating their account) is titled **"New member joined"**; in approval mode it's **"New account awaiting approval"**. Administrators' own sign-ins aren't emailed. **Every** sign-in is also listed under Admin → Activity Logs → *Member activity → Signed in*.
+New members create their own account on the sign-in page and are signed in right away. **No emails are sent to you.** You control access in **Admin → Members**: deactivate anyone (they lose access immediately; their progress is kept) and reactivate them any time. Every sign-in is listed under **Admin → Activity Logs**.
 
-1. **Create a free Resend account** at <https://resend.com>, ideally using the address that should receive the alerts (e.g. jonasrosauro122@gmail.com). Then go to **API Keys → Create API key** and copy it (`re_…`).
-   - Resend's built-in sender (`onboarding@resend.dev`) can only email the **Resend account owner's** address. To send to any other address, or from your own domain, verify the domain under **Domains** in Resend.
-2. **Store the function address and a secret in your database.** Open [supabase/setup/login_alerts.sql](supabase/setup/login_alerts.sql) and replace `YOUR-PROJECT-REF`. Paste it into **SQL Editor** and click **Run**. The last result row shows a long random value; copy it.
-3. **Give the function its secrets and deploy it** (terminal, in the project folder):
-   ```bash
-   npx supabase secrets set \
-     LOGIN_ALERT_SECRET=<value from step 2> \
-     RESEND_API_KEY=<your re_… key> \
-     ALERT_TO=jonasrosauro122@gmail.com \
-     ALERT_TIMEZONE=<your time zone, e.g. Asia/Manila>
-   npx supabase functions deploy login-alert
-   ```
-   Optional: `ALERT_FROM="VA Training Academy <alerts@your-domain>"` once your domain is verified in Resend. `SITE_URL` (from step 4) adds a "View member" link to the email.
-4. **Test it:** sign in on the site as a **member** (not an admin). The email arrives within a few seconds. Check spam the first time and mark it "Not spam".
-   - **No email?** Dashboard → Edge Functions → `login-alert` → **Logs**. Then check Database → Extensions: `pg_net` must be enabled.
+**1. Two switches.** Supabase → **Authentication → Sign In / Providers**:
+- **Allow new users to sign up** → **ON**
+- **Email → Confirm email** → **OFF** (so new members get in immediately)
 
-**Turn alerts off** (sign-ins are still logged): in the SQL Editor run
-`delete from vault.secrets where name in ('login_alert_url', 'login_alert_secret');`
+Click **Save**.
 
-Alerts can never block a sign-in: if email sending fails, the member still gets in and the problem shows in the function logs.
+**2. Run one script.**
+1. In VS Code, open [supabase/setup/1_enable_create_account.sql](supabase/setup/1_enable_create_account.sql) and copy everything.
+2. In Supabase, go to **SQL Editor → New query**, paste, and click **Run**.
+3. You'll see: *"All set: anyone can create an account and sign in…"*
+
+Safe to run again. If you ran an earlier version that set up login alert emails, this turns them off and deletes the stored Resend key.
+
+**3. Try it.** Open your site in a private window → **Create an account**. You land on the dashboard. As admin, open **Admin → Members**: the new person is listed, and the ⛔ / ✓ buttons deactivate / reactivate them.
+
+**If something doesn't work:**
+| Problem | Fix |
+|---|---|
+| New member sees "Account not active" | Step 2 wasn't run, or you deactivated them. Run the script / reactivate them |
+| "Sign-ups are currently closed" | Step 1: turn **Allow new users to sign up** ON |
+| New member must confirm their email first | Step 1: turn **Confirm email** OFF |
+| Deactivate shows "Run supabase/setup/1_enable_create_account.sql…" | Step 2 wasn't run yet |
+
+**Optional:** **Add member** (you create the account and the person gets an invitation email), **Send access email** and changing a member's email appear only once the `admin-members` Edge Function from step 4 is deployed. Everything else works without it.
 
 ---
 
@@ -154,8 +160,7 @@ Dashboard → **Authentication**:
 | Setting | Value | Why |
 |---|---|---|
 | Sign In / Providers → **Allow new users to sign up** | **On** | Needed for the **Create account** page. Accounts are always members, never admins |
-| Sign In / Providers → Email → **Confirm email** | **On** (recommended) | New accounts must prove they own the email before signing in. Needs working SMTP (below). If Off, people are signed in right after creating the account |
-| Emails → Templates → **Confirm signup** | Link: `{{ .SiteURL }}/login?token_hash={{ .TokenHash }}&type=email` | Confirmation links that work on any device |
+| Sign In / Providers → Email → **Confirm email** | **Off** (your choice) | People are signed in right after creating their account; no confirmation email. Trade-off: the email address isn't verified (see SECURITY_AUDIT.md C1). To require confirmation later, turn it On; the app handles both |
 | *(Optional)* Attack Protection → **CAPTCHA** | Turnstile or hCaptcha | Recommended if bots start creating accounts. Ask me to add the widget to the sign-up form |
 | Sign In / Providers → Email | Enabled | Email + password login |
 | **Password requirements** (Providers → Email) | Minimum length **8**; require letters and digits | The app enforces this on its forms; this makes the server enforce it too |
@@ -167,7 +172,7 @@ Dashboard → **Authentication**:
 ```sql
 update public.portal_settings set new_account_status = 'inactive';
 ```
-New accounts then see "Account not active" until you activate them in **Admin → Members**. Their alert email says "New account awaiting approval", with a link straight to them. Switch back any time with `'active'`.
+New accounts then see "Account not active" until you activate them in **Admin → Members** (no email is sent; check the Members list, filter **Inactive**). Switch back any time with `'active'`.
 
 Dashboard → **Storage → Settings → Upload file size limit**:
 - **Free plan:** 50 MB, which is the maximum, so videos must be 50 MB or smaller.

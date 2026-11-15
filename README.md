@@ -25,18 +25,17 @@ New members create their own account on the sign-in page, or an administrator cr
 
 **Administrators**
 - Dashboard with live statistics and quick actions.
-- **Members:** create (with invitation email), edit, change role, activate/deactivate, view each member's progress.
+- **Members:** activate/deactivate, edit, change role, view each member's progress. (Adding members by invitation email needs the optional Edge Function.)
 - **Upload Center:** drag-and-drop PDFs and videos, with resumable uploads for big files and thumbnails.
 - **Training Resources:** edit, publish/unpublish, replace file, delete.
 - **Categories:** create, rename, hide, safe delete.
 - **Announcements:** draft, publish, schedule, archive.
 - **Activity Logs:** a record of who did what, including every sign-in (recorded by the server).
-- **Login alerts:** an email to the administrator whenever a member signs in (who, when, device).
 
 **Security:**
 - Every rule is enforced by the database (Row Level Security), not just by hiding buttons.
 - Files are in private storage and opened through links that expire.
-- Admin actions go through a protected server function.
+- Admin actions are re-checked on the server (admin-only database functions) and written to the audit log.
 
 ## Technology
 
@@ -71,7 +70,7 @@ New members create their own account on the sign-in page, or an administrator cr
 | `npm run dev` | Run the site locally with live reload |
 | `npm run build` | Build the production version into `dist/` |
 | `npm run preview` | Serve that production build locally |
-| `npm run test:db` | Apply all migrations to a temporary database and run 176 security checks (no Supabase or internet needed) |
+| `npm run test:db` | Apply all migrations to a temporary database and run 192 security checks (no Supabase or internet needed) |
 | `npm run test:e2e` | Production acceptance test in Chrome against a simulated backend (needs Google Chrome) |
 | `npm run test:responsive` | Check every page at phone/tablet/desktop widths (needs Google Chrome) |
 
@@ -96,7 +95,6 @@ These go in `.env.local` (your computer) and in **Vercel → Project → Setting
 |---|---|
 | `SITE_URL` | Your live address, e.g. `https://<your-site-domain>` (invite/reset links go here) |
 | `ALLOWED_ORIGINS` | Browser addresses allowed to call the function (comma-separated) |
-| `LOGIN_ALERT_SECRET` · `RESEND_API_KEY` · `ALERT_TO` · `ALERT_TIMEZONE` (· `ALERT_FROM`) | Login alert emails, see [DEPLOYMENT_GUIDE.md §4b](DEPLOYMENT_GUIDE.md) |
 
 ---
 
@@ -105,7 +103,7 @@ These go in `.env.local` (your computer) and in **Vercel → Project → Setting
 Full steps: **[DEPLOYMENT_GUIDE.md §2–6](DEPLOYMENT_GUIDE.md)**. Details: [supabase/README.md](supabase/README.md).
 
 1. **Back up first** if the project already has data (`pg_dump`, see below).
-2. **Database:** `npx supabase link --project-ref <ref>` then `npx supabase db push`. This applies the 8 files in `supabase/migrations/` in order:
+2. **Database:** `npx supabase link --project-ref <ref>` then `npx supabase db push`. This applies the 9 files in `supabase/migrations/` in order:
 
    | File | Adds |
    |---|---|
@@ -115,8 +113,10 @@ Full steps: **[DEPLOYMENT_GUIDE.md §2–6](DEPLOYMENT_GUIDE.md)**. Details: [su
    | `20261115100000_training_storage.sql` | private storage buckets + rules |
    | `20261116100000_learning_progress_resume.sql` | video resume |
    | `20261117100000_admin_management.sql` | contact numbers, category visibility, announcements, audit log |
-| `20261118100000_login_alerts.sql` | server-side sign-in log + login alert emails |
-| `20261119100000_self_signup.sql` | Create account: new-account setting, first-sign-in alerts |
+| `20261118100000_login_alerts.sql` | server-side sign-in log |
+| `20261119100000_self_signup.sql` | Create account: new-account setting |
+| `20261120100000_direct_login_alert_email.sql` | alert emails (superseded by the next one) |
+| `20261121100000_remove_alerts_admin_status.sql` | no alert emails; admin activate/deactivate/edit functions |
 
 3. **Storage buckets** are created by the migrations, all **private**:
 
@@ -128,9 +128,10 @@ Full steps: **[DEPLOYMENT_GUIDE.md §2–6](DEPLOYMENT_GUIDE.md)**. Details: [su
    | `announcement-images` | announcement images | 5 MB |
 
    The project-wide limit (Storage → Settings) also applies. **Free plan: 50 MB per file.**
-4. **Edge Functions:** `npx supabase functions deploy admin-members`, after setting the secrets above. Optional login alerts: `login-alert`, see [DEPLOYMENT_GUIDE.md §4b](DEPLOYMENT_GUIDE.md).
-5. **Auth settings:**
-   - turn **on** "Allow new users to sign up" (for the Create account page) and keep **Confirm email** on;
+4. **Edge Function (optional):** `npx supabase functions deploy admin-members`, after setting the secrets above. Only needed for **Add member** by invitation, access emails and email changes.
+5. **Create account + member controls:** one copy-paste SQL script, no terminal. See [DEPLOYMENT_GUIDE.md §4b](DEPLOYMENT_GUIDE.md).
+6. **Auth settings:**
+   - turn **on** "Allow new users to sign up" (for the Create account page) and turn **off** "Confirm email" (new members get in right away);
    - password minimum 8 with letters and digits;
    - custom SMTP;
    - the invite and reset email templates;
@@ -144,12 +145,12 @@ This only works while no admin exists.
 
 ### Creating member accounts
 **Option 1 — members sign up themselves:** the sign-in page has **Create an account**.
-- With Supabase **Confirm email** on (recommended), they confirm by email first, then sign in.
+- With Supabase **Confirm email** off (current choice), they're signed in as soon as the account is created. No email is sent; they appear in **Admin → Members**, where you can deactivate or reactivate them.
 - New accounts can learn immediately (default). To approve each new person first, run this once in the SQL Editor:
   `update public.portal_settings set new_account_status = 'inactive';`
-  New accounts then wait until you activate them in **Admin → Members**, and the alert email says "awaiting approval". Switch back with `'active'`.
+  New accounts then wait until you activate them in **Admin → Members** (filter **Inactive**). Switch back with `'active'`.
 
-**Option 2 — you create them:** sign in as admin → **Members → Add member**. Enter the name, email, optional contact number and role.
+**Option 2 — you create them** (needs the optional Edge Function): sign in as admin → **Members → Add member**. Enter the name, email, optional contact number and role.
 - **Active:** they get an invitation email to set their password.
 - **Inactive:** no email yet; reactivate them later and press ✉ to send the invite.
 
@@ -197,9 +198,9 @@ pg_dump "<connection string from Supabase → Connect → Session pooler>" --no-
 | Vercel "404: NOT_FOUND" on refresh or direct link | `vercel.json` must be in the repository root (it contains the rewrite to `index.html`) |
 | Login works locally but not live | Supabase → Authentication → URL Configuration: set the live **Site URL** / Redirect URL |
 | Invitation or reset emails don't arrive | Configure custom SMTP (the built-in sender is very limited). Check spam |
-| No login alert email | Edge Functions → `login-alert` → Logs. Check the secrets (DEPLOYMENT_GUIDE §4b), that `pg_net` is enabled, and that you signed in as a **member** (admin sign-ins aren't emailed) |
 | Email link says "Link expired" | Links are single-use and expire (default 24 h). Admin → Members → ✉ sends a new one |
-| "Member management is not deployed yet" / network error on Add member | Deploy `admin-members`; check `ALLOWED_ORIGINS` includes the site address |
+| No **Add member** button | Normal without the optional `admin-members` Edge Function; members create their own accounts. Deploy it to add members by invitation |
+| Deactivate says "Run supabase/setup/1_enable_create_account.sql…" | Run that script once in the Supabase SQL Editor |
 | "The email could not be sent" / "Too many emails" | SMTP not configured, or the rate limit was hit |
 | "Account not available" after sign-in | The user has no profile row. Delete the auth user and re-invite them |
 | "Account deactivated" | Reactivate the member in Admin → Members |
@@ -221,10 +222,9 @@ va-training-academy/
 ├── DEPLOYMENT_GUIDE.md · PRODUCTION_CHECKLIST.md · SECURITY_AUDIT.md · TEST_RESULTS.md
 ├── docs/SECURITY_CHECKLIST.md # Manual + API security tests
 ├── supabase/
-│   ├── migrations/            # 8 database migrations (apply in order)
-│   ├── functions/admin-members/   # Server function for member management
-│   ├── functions/login-alert/     # Emails the admin when a member signs in
-│   ├── setup/                 # One-time SQL: create_admins.sql, login_alerts.sql
+│   ├── migrations/            # 9 database migrations (apply in order)
+│   ├── functions/admin-members/   # Optional server function: add members by invitation, access emails
+│   ├── setup/                 # Copy-paste SQL: create_admins, 1_enable_create_account
 │   ├── tests/rls.test.mjs     # npm run test:db
 │   └── README.md              # Database, storage, email, limits
 ├── tests/e2e/                 # npm run test:e2e / test:responsive

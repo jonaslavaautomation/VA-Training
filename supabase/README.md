@@ -12,15 +12,17 @@ supabase/
 │   ├── 20261115100000_training_storage.sql  # Phase 3: private buckets, Storage RLS, file integrity, orphan finder
 │   ├── 20261116100000_learning_progress_resume.sql  # Phase 4: video resume columns + tighter progress UPDATE policy
 │   ├── 20261117100000_admin_management.sql  # Phase 5: contact numbers, category visibility, announcements workflow + images, audit log, admin helpers
-│   ├── 20261118100000_login_alerts.sql      # Server-side sign-in log + member login alert emails (pg_net → login-alert)
-│   └── 20261119100000_self_signup.sql       # "Create account": portal_settings.new_account_status + first-sign-in alerts
+│   ├── 20261118100000_login_alerts.sql      # Server-side sign-in log
+│   ├── 20261119100000_self_signup.sql       # "Create account": portal_settings.new_account_status
+│   ├── 20261120100000_direct_login_alert_email.sql  # alert emails via Resend (superseded by 010)
+│   └── 20261121100000_remove_alerts_admin_status.sql # no alert emails; admin_set_member_status / admin_update_member
 ├── functions/
 │   ├── _shared/cors.ts
 │   ├── admin-members/index.ts               # create / edit / activate / deactivate members, send emails
 │   ├── admin-members/deno.json
 │   └── .env.example                         # Edge Function secrets template
-├── setup/                                   # one-time SQL: create_admins.sql, login_alerts.sql
-└── tests/rls.test.mjs                       # `npm run test:db` — 176 database + storage security checks
+├── setup/                                   # copy-paste SQL: create_admins, 1_enable_create_account
+└── tests/rls.test.mjs                       # `npm run test:db` — 179 security checks + 13 setup-script checks
 ```
 
 ---
@@ -43,7 +45,7 @@ supabase/
 | Setting | Where | Value |
 |---|---|---|
 | Public sign-ups ("Create account") | Authentication → Sign In / Providers → **Allow new users to sign up** | **On**. New accounts are always members; open or approval mode via `portal_settings` (DEPLOYMENT_GUIDE §5) |
-| Confirm email | Authentication → Sign In / Providers → Email → **Confirm email** | **On** (recommended). Template **Confirm signup**: `{{ .SiteURL }}/login?token_hash={{ .TokenHash }}&type=email` |
+| Confirm email | Authentication → Sign In / Providers → Email → **Confirm email** | **Off**: new members sign in immediately (owner's choice). If you turn it On, set the **Confirm signup** template link to `{{ .SiteURL }}/login?token_hash={{ .TokenHash }}&type=email` |
 | Email provider | Authentication → Sign In / Providers → Email | Enabled |
 | Site URL | Authentication → URL Configuration | `https://your-app-domain` |
 | Redirect URLs | Authentication → URL Configuration | `https://your-app-domain/reset-password` and `http://localhost:5173/reset-password` |

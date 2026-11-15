@@ -10,14 +10,11 @@ enable_signup = true
 
 [auth.email]
 enable_signup = true
-enable_confirmations = true
+# Owner's choice: no confirmation email — new accounts can sign in right away.
+enable_confirmations = false
 
 [functions.admin-members]
 # The function verifies the caller's token itself with auth.getUser() and then
 # checks profiles.role/status, so it works with both legacy JWT keys and the
 # newer publishable/secret API keys.
-verify_jwt = false
-
-[functions.login-alert]
-# Called by the database (pg_net) with a shared secret header, not by browsers.
 verify_jwt = false

@@ -3,10 +3,12 @@
  *
  * Reads go straight to Supabase — RLS returns every profile, progress row and
  * favorite only to active admins; sign-in times come from the admin-only
- * admin_member_auth_info() function. Every write goes through the
- * `admin-members` Edge Function, which re-checks the caller's admin role
- * server-side, is the only code that holds the service-role key, and writes
- * the audit log.
+ * admin_member_auth_info() function. Activate / deactivate and profile edits
+ * use the admin-only database functions admin_set_member_status() and
+ * admin_update_member(), which re-check the admin role and write the audit
+ * log. Features that send email (add member by invitation, access emails,
+ * email changes) need the optional `admin-members` Edge Function — the only
+ * code that holds the service-role key — and are hidden when it isn't deployed.
  */
 import { FunctionsFetchError, FunctionsHttpError } from '@supabase/supabase-js'
 import { supabase, isPreviewMode } from '@/lib/supabase'
@@ -135,15 +137,41 @@ export async function createMember({ firstName, lastName, email, phone, role = '
   return invoke('create', { first_name: firstName, last_name: lastName, email, phone: phone || null, role, status })
 }
 
-export async function updateMember(userId, { firstName, lastName, email, phone, role }) {
-  const { member } = await invoke('update', { user_id: userId, first_name: firstName, last_name: lastName, email, phone: phone ?? undefined, role })
-  return member
+/** Name, contact number and role via the database; an email change also needs the Edge Function. */
+export async function updateMember(userId, { firstName, lastName, email, phone, role }, { previousEmail } = {}) {
+  if (isPreviewMode) throw userError(PREVIEW_MESSAGE, { code: 'preview' })
+  if (email && previousEmail && email.trim().toLowerCase() !== previousEmail.toLowerCase()) {
+    await invoke('update', { user_id: userId, first_name: firstName, last_name: lastName, email, phone: phone ?? undefined, role })
+  }
+  return rpc('admin_update_member', { p_user_id: userId, p_first_name: firstName, p_last_name: lastName, p_phone: phone || null, p_role: role ?? null })
 }
 
-/** status: 'active' | 'inactive'. Deactivation also blocks sign-in server-side; progress is kept. */
+/** status: 'active' | 'inactive'. Inactive members can't open the portal; progress is kept. */
 export async function setMemberStatus(userId, status) {
-  const { member } = await invoke('set_status', { user_id: userId, status })
-  return member
+  if (isPreviewMode) throw userError(PREVIEW_MESSAGE, { code: 'preview' })
+  return rpc('admin_set_member_status', { p_user_id: userId, p_status: status })
+}
+
+let functionCheck = null
+/** True when the optional `admin-members` Edge Function is deployed (checked once per page load). */
+export function isAdminFunctionAvailable() {
+  if (isPreviewMode) return Promise.resolve(false)
+  functionCheck ??= supabase.functions
+    .invoke('admin-members', { body: { action: 'ping' } })
+    // A deployed function answers (400 "Unknown action"); a missing one is a 404 or a failed request.
+    .then(({ error }) => !error || (error instanceof FunctionsHttpError && error.context?.status !== 404))
+    .catch(() => false)
+  return functionCheck
+}
+
+async function rpc(name, params) {
+  const { data, error } = await supabase.rpc(name, params)
+  if (!error) return data
+  // The database functions only raise messages written for admins.
+  if (error.code === 'P0001' && error.message) throw userError(error.message, { code: 'rejected', cause: error })
+  if (error.code === '42501') throw userError('Only administrators can manage members.', { code: 'forbidden', cause: error })
+  if (error.code === 'PGRST202') throw userError('Run supabase/setup/1_enable_create_account.sql in the Supabase SQL Editor to enable member controls.', { code: 'not_deployed', cause: error })
+  throw error
 }
 
 /** Re-sends the invitation (never signed in) or a password reset. Returns 'invite' | 'recovery'. */

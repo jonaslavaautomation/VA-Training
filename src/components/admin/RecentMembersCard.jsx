@@ -1,4 +1,4 @@
-import { UserPlus } from 'lucide-react'
+import { Users } from 'lucide-react'
 import Card from '@/components/ui/Card'
 import Avatar from '@/components/ui/Avatar'
 import Badge from '@/components/ui/Badge'
@@ -16,7 +16,7 @@ export default function RecentMembersCard({ members, loading }) {
       ) : !members.length ? (
         <div className="flex flex-col items-center py-6 text-center">
           <p className="text-sm text-slate-500">No members yet.</p>
-          <LinkButton to="/admin/members?new=1" size="sm" variant="secondary" className="mt-3"><UserPlus className="h-4 w-4" /> Add your first member</LinkButton>
+          <LinkButton to="/admin/members" size="sm" variant="secondary" className="mt-3"><Users className="h-4 w-4" /> Open members</LinkButton>
         </div>
       ) : (
         <ul className="divide-y divide-slate-100">

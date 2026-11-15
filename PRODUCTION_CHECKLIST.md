@@ -6,19 +6,19 @@ Each item links to the step that explains it ([DEPLOYMENT_GUIDE.md](DEPLOYMENT_G
 ## Before deployment
 - [ ] **Backup taken** of the existing database (`pg_dump` file saved somewhere safe) — DG §2. *Skip only for a brand-new project.*
 - [ ] Storage files backed up or originals kept — DG §2b
-- [ ] `npm run test:db` passes locally (176 checks)
+- [ ] `npm run test:db` passes locally (192 checks)
 - [ ] `npm run build` succeeds locally
 
 ## Supabase
-- [ ] All 8 migrations applied (`npx supabase migration list` shows them all) — DG §3
+- [ ] All 9 migrations applied (or STEP 1 script run) (`npx supabase migration list` shows them all) — DG §3
 - [ ] 7 tables present; 4 storage buckets present and **Private**
-- [ ] Edge Function `admin-members` deployed (latest version) — DG §4
+- [ ] *(Optional)* Edge Function `admin-members` deployed, only if you want Add member / access emails — DG §4
 - [ ] Function secrets `SITE_URL` and `ALLOWED_ORIGINS` set to the **live domain** — DG §4/§9
-- [ ] *(Login alerts)* `login_alerts.sql` run, `login-alert` deployed with its secrets, and a member test sign-in emailed you — DG §4b
+- [ ] `1_enable_create_account.sql` run in SQL Editor (latest version) — DG §4b
 - [ ] **Allow new users to sign up = ON** (needed for “Create account”) — DG §5
-- [ ] **Confirm email = ON** (recommended) and the Confirm signup template updated — DG §5
+- [ ] **Confirm email = OFF** (instant access, your choice) — DG §5
 - [ ] New-account mode chosen: open (default) or approval (`new_account_status = 'inactive'`) — DG §5
-- [ ] Test: create an account on the live site, confirm the email, sign in; the admin receives “New member joined”
+- [ ] Test: create an account on the live site; you're signed in right away; as admin, deactivate then reactivate that account in Admin → Members
 - [ ] Password requirements: minimum 8, letters + digits — DG §5
 - [ ] Custom **SMTP** configured, and a test email received — DG §5
 - [ ] Invite + Reset password email templates updated — DG §5

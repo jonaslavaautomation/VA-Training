@@ -23,15 +23,15 @@ There are three different environments, and a PASS in one doesn't prove the othe
 
 | Suite | Checks | Result |
 |---|---|---|
-| Database & storage security (`npm run test:db`) | 176 | **176 PASS** |
-| Edge Function `login-alert` (Deno, simulated email provider) | 17 | **17 PASS** |
-| Edge Function `admin-members` (Deno, simulated Auth/REST) | 45 | **45 PASS** |
+| Database & storage security (`npm run test:db`, part 1) | 194 | **194 PASS** |
+| Copy-paste setup scripts (`npm run test:db`, part 2) | 9 | **9 PASS** |
+| Edge Function `admin-members` (Deno, simulated Auth/REST; optional, unchanged this round, not re-run) | 45 | **45 PASS** (earlier run) |
 | Browser: Phase 2 auth & member management | 33 | **33 PASS** |
 | Browser: Phase 3 uploads, storage, player, PDF viewer | 31 | **31 PASS** |
 | Browser: Phase 4 member learning experience | 34 | **34 PASS** |
 | Browser: Phase 5 admin management | 40 | **40 PASS** |
 | Browser: preview mode (local dev) | 4 | **4 PASS** |
-| **Production acceptance** (production build + Vercel headers/CSP/rewrite from `vercel.json`, incl. 6 sign-up checks S1–S6) — `npm run test:e2e` | 34 | **34 PASS** |
+| **Production acceptance** (production build + Vercel headers/CSP/rewrite from `vercel.json`, incl. sign-up checks S1–S6 and S7: admin controls without the Edge Function) — `npm run test:e2e` | 35 | **35 PASS** |
 | **Responsive audit**: 20 pages + 4 dialogs × 5 widths — `npm run test:responsive` | 153 | **153 PASS** |
 | Production build without env vars shows "not available" (no preview) | 3 routes | **PASS** |
 | CSP negative control (inline script + outside image blocked) | 2 | **PASS** |

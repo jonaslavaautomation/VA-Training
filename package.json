@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "test:db": "node supabase/tests/rls.test.mjs",
+    "test:db": "node supabase/tests/rls.test.mjs && node supabase/tests/setup.test.mjs",
     "test:e2e": "node tests/e2e/acceptance.test.mjs",
     "test:responsive": "node tests/e2e/responsive.test.mjs"
   },
