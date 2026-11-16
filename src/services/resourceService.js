@@ -13,8 +13,10 @@ import { signUrl, signUrls } from '@/services/storageService'
 import { LIBRARY_PAGE_SIZE, SIGNED_URL_TTL, UPLOAD_RULES, VIDEO_COMPLETION } from '@/config/constants'
 
 const CATEGORY_COLUMNS = 'id, name, slug, icon, color'
+/** LAVA preparation materials (audience 'lava') live in the LAVA portal, not the Training Library. */
+const LIBRARY = 'library'
 const BASE_COLUMNS =
-  'id, title, description, category_id, resource_type, storage_path, thumbnail_path, file_size, duration_seconds, page_count, status, created_at, updated_at'
+  'id, title, description, category_id, resource_type, storage_path, thumbnail_path, file_size, duration_seconds, page_count, status, audience, created_at, updated_at'
 const RESOURCE_COLUMNS = `${BASE_COLUMNS}, category:categories(${CATEGORY_COLUMNS})`
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
@@ -73,6 +75,7 @@ export async function listCategories() {
     .from('categories')
     .select('id, name, slug, description, icon, color, created_at, training_resources(count)')
     .eq('training_resources.status', 'published')
+    .eq('training_resources.audience', LIBRARY)
     .order('name')
   if (error) throw error
   return data.map(({ training_resources: counts, ...c }) => ({ ...c, resource_count: counts?.[0]?.count ?? 0 }))
@@ -81,7 +84,7 @@ export async function listCategories() {
 export async function listResources({ q = '', type = '', category = '', limit } = {}) {
   if (isPreviewMode) return preview.listResources({ q, type, category, limit })
   const columns = category ? `${BASE_COLUMNS}, category:categories!inner(${CATEGORY_COLUMNS})` : RESOURCE_COLUMNS
-  let query = supabase.from('training_resources').select(columns).eq('status', 'published').order('created_at', { ascending: false })
+  let query = supabase.from('training_resources').select(columns).eq('status', 'published').eq('audience', LIBRARY).order('created_at', { ascending: false })
   if (type) query = query.eq('resource_type', type)
   if (category) query = query.eq('category.slug', category)
   const term = sanitizeTerm(q)
@@ -115,6 +118,7 @@ export async function searchLibrary({ q = '', type = '', category = '', sort = '
     .from('training_resources')
     .select(columns, { count: 'exact' })
     .eq('status', 'published')
+    .eq('audience', LIBRARY)
     .order(column, order)
     .order('id', { ascending: true }) // stable paging when titles/dates tie
     .range(page * pageSize, page * pageSize + pageSize - 1)
@@ -146,7 +150,7 @@ export async function listFavorites() {
     .eq('user_id', uid)
     .order('created_at', { ascending: false })
   if (error) throw error
-  return decorate(data.map((f) => f.resource).filter((r) => r?.status === 'published'))
+  return decorate(data.map((f) => f.resource).filter((r) => r?.status === 'published' && r.audience !== 'lava'))
 }
 
 /** Returns the new favorite state. */
@@ -175,12 +179,12 @@ export async function getLearningProgress() {
       .select(`updated_at, resource:training_resources(${RESOURCE_COLUMNS})`)
       .eq('user_id', uid)
       .order('updated_at', { ascending: false }),
-    supabase.from('training_resources').select('id', { count: 'exact', head: true }).eq('status', 'published'),
+    supabase.from('training_resources').select('id', { count: 'exact', head: true }).eq('status', 'published').eq('audience', LIBRARY),
   ])
   if (progressRes.error) throw progressRes.error
   if (countRes.error) throw countRes.error
   // Only published resources count — unpublished ones disappear from stats too.
-  const items = await decorate(progressRes.data.map((p) => p.resource).filter((r) => r?.status === 'published'))
+  const items = await decorate(progressRes.data.map((p) => p.resource).filter((r) => r?.status === 'published' && r.audience !== 'lava'))
   return {
     inProgress: items.filter((i) => i.progress?.status === 'in_progress'),
     completed: items

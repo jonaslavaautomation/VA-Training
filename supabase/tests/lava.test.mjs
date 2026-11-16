@@ -224,6 +224,37 @@ await as('postgres', null, async () => {
   types === 'simulator_access_approved,simulator_access_rejected' ? ok('approvals and rejections are audited') : bad('sim audit', types)
 })
 
+console.log('\nlesson videos & PDFs (Training Library storage, LAVA-only)')
+{
+  // Admin uploads a LAVA video and attaches it; a normal library PDF exists too.
+  await as('postgres', null, () => q(`insert into storage.buckets (id, name) values ('training-videos', 'training-videos'), ('training-pdfs', 'training-pdfs') on conflict do nothing`))
+  const V = await member(A, () => scalar(`insert into public.training_resources (title, resource_type, storage_path, status, audience) values ('LAVA welcome video', 'VIDEO', 'lava-v/intro.mp4', 'published', 'lava') returning id`))
+  const LIB = await member(A, () => scalar(`insert into public.training_resources (title, resource_type, storage_path, status) values ('Library guide', 'PDF', 'lib/guide.pdf', 'published') returning id`))
+  await as('postgres', null, () => q(`insert into storage.objects (bucket_id, name) values ('training-videos', 'lava-v/intro.mp4'), ('training-pdfs', 'lib/guide.pdf')`))
+  await member(A, async () => {
+    await q(`insert into public.lava_lesson_materials (lesson_id, resource_id, sort_order) values ($1, $2, 1), ($1, $3, 2)`, [L, V, LIB])
+    ok('admin attaches an uploaded video (and a library PDF) to a lesson')
+  })
+  await member(M1, async () => {
+    await expectRows('agreed member sees the lesson materials', `select * from public.lava_lesson_materials where lesson_id = $1`, 2, [L])
+    await expectRows('agreed member can read the LAVA video record', `select id from public.training_resources where id = $1`, 1, [V])
+    await expectRows('…and its file in storage', `select name from storage.objects where bucket_id = 'training-videos' and name = 'lava-v/intro.mp4'`, 1)
+    await expectError('members cannot attach materials', `insert into public.lava_lesson_materials (lesson_id, resource_id) values ($1, $2)`, /row-level security/, [L, LIB])
+  })
+  await member(M2, async () => {
+    await expectRows('member without agreement cannot see lesson materials', `select * from public.lava_lesson_materials`, 0)
+    await expectRows('…cannot read the LAVA video record', `select id from public.training_resources where id = $1`, 0, [V])
+    await expectRows('…cannot read the LAVA video file', `select name from storage.objects where name = 'lava-v/intro.mp4'`, 0)
+    await expectRows('…but still reads normal library material', `select id from public.training_resources where id = $1`, 1, [LIB])
+    await expectRows('…and its file', `select name from storage.objects where name = 'lib/guide.pdf'`, 1)
+  })
+  await as('postgres', null, async () => {
+    const aud = await scalar(`select count(*)::int from public.training_resources where audience = 'library'`)
+    aud >= 1 ? ok('existing resources default to the library audience') : bad('audience default', aud)
+  })
+  await member(A, () => expectError('audience must be library or lava', `insert into public.training_resources (title, resource_type, storage_path, status, audience) values ('x', 'PDF', 'x/y.pdf', 'draft', 'public')`, /audience_check/))
+}
+
 console.log('\ninactive accounts')
 await member(M3, () => q(`select public.lava_submit_agreement(true, true, true)`))
 await as('postgres', null, () => q(`update public.profiles set status = 'inactive' where id = $1`, [M3]))

@@ -17,7 +17,8 @@ supabase/
 │   ├── 20261120100000_direct_login_alert_email.sql  # alert emails via Resend (superseded by 010)
 │   ├── 20261121100000_remove_alerts_admin_status.sql # no alert emails; admin_set_member_status / admin_update_member
 │   ├── 20261122100000_lava_portal.sql       # Phase 7A: LAVA applicant portal tables, RLS, grading + approval functions
-│   └── 20261122100100_lava_seed_content.sql # Phase 7A: generated from content/lava/ (npm run build:lava-seed)
+│   ├── 20261122100100_lava_seed_content.sql # Phase 7A: generated from content/lava/ (npm run build:lava-seed)
+│   └── 20261123100000_lava_lesson_materials.sql # LAVA lesson videos & PDFs; training_resources.audience
 ├── content/lava/                            # course JSON, company drafts + simulator activities (portal.mjs), build-seed.mjs
 ├── functions/
 │   ├── _shared/cors.ts

@@ -6,7 +6,7 @@
 // Profiles are mirrored from the fake's in-memory state before each request.
 import { supabaseLikeDb } from '../../supabase/tests/pglite-supabase.mjs'
 
-const TABLES = new Set(['lava_content', 'lava_positions', 'lava_agreements', 'lava_courses', 'lava_lessons', 'lava_lesson_progress', 'lava_assessments', 'lava_questions', 'lava_attempts', 'lava_simulator_requests'])
+const TABLES = new Set(['lava_content', 'lava_positions', 'lava_agreements', 'lava_courses', 'lava_lessons', 'lava_lesson_progress', 'lava_lesson_materials', 'lava_assessments', 'lava_questions', 'lava_attempts', 'lava_simulator_requests'])
 const RPCS = new Set(['lava_submit_agreement', 'lava_get_assessment', 'lava_submit_attempt', 'lava_request_simulator_access', 'lava_decide_simulator_request'])
 const IDENT = /^[a-z_][a-z0-9_]*$/
 const UUID = /^[0-9a-f-]{36}$/i
@@ -20,6 +20,22 @@ function exclusive(fn) {
   const run = queue.then(fn, fn)
   queue = run.catch(() => {})
   return run
+}
+
+const syncedResources = new Map()
+/** Training Library rows live in the fake's memory; LAVA lesson materials reference them by id. */
+async function mirrorResources(db, state) {
+  for (const r of state.resources) {
+    const sig = `${r.status}|${r.audience ?? 'library'}|${r.storage_path}`
+    if (syncedResources.get(r.id) === sig) continue
+    await db.query(
+      `insert into public.training_resources (id, title, resource_type, storage_path, status, audience)
+       values ($1, $2, $3, $4, $5, $6)
+       on conflict (id) do update set status = excluded.status, audience = excluded.audience, storage_path = excluded.storage_path`,
+      [r.id, r.title, r.resource_type, r.storage_path, r.status, r.audience ?? 'library'],
+    )
+    syncedResources.set(r.id, sig)
+  }
 }
 
 async function mirrorProfiles(db, state) {
@@ -131,6 +147,7 @@ export async function handleLava({ req, res, url, path, body, uid, state, send }
   try {
     const result = await exclusive(async () => {
       await mirrorProfiles(db, state)
+      await mirrorResources(db, state)
       await db.exec(`reset role; select set_config('request.jwt.claim.sub', '${uid}', false); set role authenticated;`)
       try { return await execute(db, { req, url, path, body, uid }) } finally { await db.exec(`reset role; select set_config('request.jwt.claim.sub', '', false);`) }
     })

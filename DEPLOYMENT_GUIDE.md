@@ -89,6 +89,7 @@ The database is created by 9 migration files in `supabase/migrations/`. They run
 | 10 | `20261121100000_remove_alerts_admin_status.sql` | Removes alert emails; admin activate/deactivate/edit in the database | No (deletes only stored alert settings) |
 | 11 | `20261122100000_lava_portal.sql` | LAVA applicant portal tables, RLS and functions | No (adds tables; extends allowed activity-log values) |
 | 12 | `20261122100100_lava_seed_content.sql` | LAVA courses, quizzes and simulator activities; draft company sections | No (inserts only what's missing) |
+| 13 | `20261123100000_lava_lesson_materials.sql` | LAVA lesson videos & PDFs; LAVA files readable only after the agreement | No (adds a column with default `library` and a table) |
 
 None of them delete members, progress, favorites, resources or files.
 
@@ -158,6 +159,7 @@ Safe to run again. If you ran an earlier version that set up login alert emails,
 1. In VS Code, open [supabase/setup/2_lava_portal.sql](supabase/setup/2_lava_portal.sql) and copy everything.
 2. Supabase → **SQL Editor → New query** → paste → **Run**.
 3. You'll see: *"LAVA portal ready…"*
+4. Do the same with [supabase/setup/3_lava_lesson_materials.sql](supabase/setup/3_lava_lesson_materials.sql) (lesson videos & PDFs). You'll see: *"Lesson videos & PDFs ready…"*
 
 Then, signed in as admin, open **Admin → LAVA Applicants**:
 - **Company content:** the six company sections (What is LAVA, history, mission/vision, services, niches, clients) start as **drafts with [placeholders]**. Members can't see them until you replace the text with verified information and set them to **Published**.

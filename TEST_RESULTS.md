@@ -24,9 +24,9 @@ There are three different environments, and a PASS in one doesn't prove the othe
 | Suite | Checks | Result |
 |---|---|---|
 | Database & storage security (`npm run test:db`, part 1) | 194 | **194 PASS** |
-| LAVA portal database security (`npm run test:db`, `lava.test.mjs`) | 79 | **79 PASS** |
-| Copy-paste setup scripts incl. `2_lava_portal.sql` (`npm run test:db`, part 3) | 15 | **15 PASS** |
-| **LAVA applicant journey**: member + admin in Chrome, LAVA data on the real migrations (`npm run test:lava`) | 38 | **38 PASS** |
+| LAVA portal database security incl. lesson videos/PDFs (`npm run test:db`, `lava.test.mjs`) | 91 | **91 PASS** |
+| Copy-paste setup scripts incl. `2_lava_portal.sql` and `3_lava_lesson_materials.sql` | 20 | **20 PASS** |
+| **LAVA applicant journey**: member + admin in Chrome, LAVA data on the real migrations incl. lesson video/PDF upload + playback and LAVA branding checks (`npm run test:lava`) | 44 | **44 PASS** |
 | Edge Function `admin-members` (Deno, simulated Auth/REST; optional, unchanged this round, not re-run) | 45 | **45 PASS** (earlier run) |
 | Browser: Phase 2 auth & member management | 33 | **33 PASS** |
 | Browser: Phase 3 uploads, storage, player, PDF viewer | 31 | **31 PASS** |

@@ -60,12 +60,12 @@ export default function RichText({ text, className = '' }) {
       {blocks.map((b, i) => {
         if (b.type === 'h2') return <h2 key={i} className="pt-3 text-lg font-semibold text-navy-900">{inline(b.text)}</h2>
         if (b.type === 'h3') return <h3 key={i} className="pt-1 text-base font-semibold text-navy-900">{inline(b.text)}</h3>
-        if (b.type === 'ul') return <ul key={i} className="list-disc space-y-1.5 pl-5 marker:text-mint-500">{b.items.map((t, j) => <li key={j}>{inline(t)}</li>)}</ul>
+        if (b.type === 'ul') return <ul key={i} className="list-disc space-y-1.5 pl-5 marker:text-lava-500">{b.items.map((t, j) => <li key={j}>{inline(t)}</li>)}</ul>
         if (b.type === 'ol') return <ol key={i} className="list-decimal space-y-1.5 pl-5 marker:font-semibold marker:text-navy-400">{b.items.map((t, j) => <li key={j}>{inline(t)}</li>)}</ol>
         if (b.type === 'tip') {
           return (
-            <div key={i} className="flex gap-3 rounded-xl bg-mint-50 p-4 text-sm leading-6 text-navy-800 ring-1 ring-inset ring-mint-200">
-              <Lightbulb className="mt-0.5 h-4 w-4 shrink-0 text-mint-600" />
+            <div key={i} className="flex gap-3 rounded-xl bg-lava-50 p-4 text-sm leading-6 text-navy-800 ring-1 ring-inset ring-lava-200">
+              <Lightbulb className="mt-0.5 h-4 w-4 shrink-0 text-lava-600" />
               <p>{inline(b.text)}</p>
             </div>
           )

@@ -2,7 +2,8 @@ import { Link } from 'react-router-dom'
 import Spinner from './Spinner'
 
 const variants = {
-  primary: 'bg-navy-900 text-white hover:bg-navy-800 disabled:bg-navy-900/60',
+  // Themed areas (e.g. the LAVA portal) can recolor primary buttons with --btn-primary / --btn-primary-hover.
+  primary: 'bg-[var(--btn-primary,var(--color-navy-900))] text-white hover:bg-[var(--btn-primary-hover,var(--color-navy-800))] disabled:opacity-60',
   accent: 'bg-mint-400 text-navy-900 hover:bg-mint-300 disabled:bg-mint-400/60',
   secondary: 'bg-white text-navy-900 ring-1 ring-inset ring-slate-200 hover:bg-slate-50',
   ghost: 'text-slate-600 hover:bg-slate-100 hover:text-navy-900',

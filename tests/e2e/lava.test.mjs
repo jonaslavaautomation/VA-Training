@@ -98,9 +98,36 @@ async function completeCourse(page, course) {
   await text(page, 'Passed. Well done!')
 }
 
+function makePdf(text) {
+  const stream = `BT /F1 36 Tf 72 700 Td (${text}) Tj ET`
+  const objs = ['<< /Type /Catalog /Pages 2 0 R >>', '<< /Type /Pages /Kids [3 0 R] /Count 1 >>',
+    '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 5 0 R >> >> /Contents 4 0 R >>',
+    `<< /Length ${stream.length} >>\nstream\n${stream}\nendstream`, '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>']
+  let out = '%PDF-1.4\n'; const offs = []
+  objs.forEach((o, i) => { offs.push(out.length); out += `${i + 1} 0 obj\n${o}\nendobj\n` })
+  const x = out.length
+  out += `xref\n0 ${objs.length + 1}\n0000000000 65535 f \n${offs.map((o) => `${String(o).padStart(10, '0')} 00000 n \n`).join('')}trailer\n<< /Size ${objs.length + 1} /Root 1 0 R >>\nstartxref\n${x}\n%%EOF\n`
+  return Buffer.from(out, 'latin1')
+}
+
 try {
   const admin = await newPage()
   const maria = await newPage()
+  // A real 3-second video recorded in Chrome (uploaded by the admin as lesson material)
+  const rec = await admin.evaluate(async () => {
+    const c = document.createElement('canvas'); c.width = 320; c.height = 180
+    const ctx = c.getContext('2d')
+    const type = ['video/mp4;codecs=avc1', 'video/mp4', 'video/webm'].find((t) => MediaRecorder.isTypeSupported(t))
+    const r = new MediaRecorder(c.captureStream(30), { mimeType: type }); const chunks = []
+    r.ondataavailable = (e) => chunks.push(e.data)
+    let f = 0; const iv = setInterval(() => { ctx.fillStyle = `hsl(${(f * 9) % 360},70%,50%)`; ctx.fillRect(0, 0, 320, 180); f++ }, 33)
+    r.start(250); await new Promise((res) => setTimeout(res, 3200)); await new Promise((res) => { r.onstop = res; r.stop() }); clearInterval(iv)
+    const bytes = new Uint8Array(await new Blob(chunks, { type }).arrayBuffer()); let bin = ''
+    for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode(...bytes.subarray(i, i + 0x8000))
+    return { b64: btoa(bin), type: type.split(';')[0] }
+  })
+  const videoFile = { name: `lava-welcome.${rec.type === 'video/mp4' ? 'mp4' : 'webm'}`, mimeType: rec.type, buffer: Buffer.from(rec.b64, 'base64') }
+  const pdfFile = { name: 'lava-va-handbook.pdf', mimeType: 'application/pdf', buffer: makePdf('LAVA VA Handbook') }
 
   console.log('\nadmin prepares company information and positions')
   await step('A1', 'Admin logs in and opens LAVA Applicant Management', async () => {
@@ -121,7 +148,9 @@ try {
   })
   await step('A3', 'Admin adds a position with confirmed salary and publishes it as hiring', async () => {
     await admin.goto(`${BASE}/admin/lava/positions`)
+    await text(admin, 'No positions yet')
     await admin.getByRole('button', { name: 'Add position' }).click()
+    await admin.getByRole('dialog').waitFor()
     await admin.getByLabel('Job title').fill('Insurance Virtual Assistant')
     await admin.getByLabel('Job niche').fill('Insurance agency support')
     await admin.getByLabel('Job description').fill('Support licensed agents with service requests and certificates.')
@@ -136,6 +165,7 @@ try {
   })
   await step('A4', 'Admin adds a second position without salary, publishes then closes it', async () => {
     await admin.getByRole('button', { name: 'Add position' }).click()
+    await admin.getByRole('dialog').waitFor()
     await admin.getByLabel('Job title').fill('Commercial Lines Assistant')
     await admin.getByRole('dialog').getByRole('button', { name: 'Save' }).click()
     await text(admin, 'Position saved as a draft.')
@@ -143,6 +173,30 @@ try {
     await row.getByRole('button', { name: 'Publish (hiring)' }).click()
     await row.getByRole('button', { name: 'Close' }).click()
     await text(admin, 'is closed')
+  })
+
+  await step('A5', 'Admin uploads a video and a PDF to a lesson (Videos & PDFs, existing upload pipeline)', async () => {
+    await admin.goto(`${BASE}/admin/lava/courses`)
+    await admin.getByTestId('admin-course-row').first().getByRole('link', { name: /Lessons/ }).click()
+    const row = admin.getByTestId('admin-lesson-row').first()
+    await row.waitFor()
+    await row.getByRole('button', { name: /^Videos and PDFs for / }).click()
+    await admin.getByLabel('Choose lesson files to upload').setInputFiles([videoFile, pdfFile])
+    assert(await admin.getByTestId('upload-item').count() === 2, 'two files queued')
+    await admin.getByLabel('Title for lava-welcome.' + videoFile.name.split('.').pop()).fill('Welcome to LAVA (video)')
+    await admin.getByRole('button', { name: /Upload 2 files/ }).click()
+    await admin.getByText('Uploaded and added to the lesson').nth(1).waitFor({ timeout: 40000 })
+    const items = await admin.getByTestId('lesson-materials').locator('li').allTextContents()
+    assert(items.length === 2 && /Welcome to LAVA \(video\)/.test(items[0]) && /lava va handbook/i.test(items[1]), items.join(' | '))
+    await admin.getByRole('dialog').getByRole('button', { name: 'Done' }).click()
+    await text(admin, '1 video')
+    const rows = await lavaSql(`select r.audience, r.resource_type from public.lava_lesson_materials m join public.training_resources r on r.id = m.resource_id order by m.sort_order`)
+    assert(rows.length === 2 && rows.every((r) => r.audience === 'lava'), JSON.stringify(rows))
+  })
+  await step('A6', 'LAVA files appear in Manage Resources with a LAVA badge (same storage system)', async () => {
+    await admin.goto(`${BASE}/admin/resources`)
+    await text(admin, 'Welcome to LAVA (video)')
+    assert(await admin.getByText('LAVA', { exact: true }).count() >= 2, 'LAVA badge missing')
   })
 
   console.log('\nmember journey')
@@ -230,6 +284,19 @@ try {
     assert(a && a.agreed === false && a.onsite_training === false, JSON.stringify(a))
   })
 
+  await step('10b', 'Lesson shows the uploaded video (plays) and PDF (opens in the viewer)', async () => {
+    await maria.goto(`${BASE}/lava-portal/courses/${courses[0].slug}`)
+    await maria.getByRole('link', { name: 'Start course' }).click()
+    await maria.getByTestId('lesson-video').waitFor()
+    await maria.waitForFunction(() => { const v = document.querySelector('[data-testid=lesson-video] video'); return v && v.readyState >= 1 && v.duration > 0 }, null, { timeout: 20000 })
+    await maria.getByTestId('lesson-pdf').getByRole('button').first().click()
+    await maria.waitForFunction(() => { const c = document.querySelector('[data-testid=lesson-pdf] canvas'); return c && c.width > 0 }, null, { timeout: 20000 })
+  })
+  await step('10c', 'LAVA lesson files are not listed in the general Training Library', async () => {
+    await maria.goto(`${BASE}/library`)
+    await maria.waitForLoadState('networkidle')
+    assert(!(await maria.getByText('Welcome to LAVA (video)').count()), 'LAVA video listed in the library')
+  })
   await step(11, 'Member completes the Foundation course (lessons + quiz)', () => completeCourse(maria, courses[0]))
   await step(12, 'Member completes Communication Skills', () => completeCourse(maria, courses[1]))
   await step(13, 'Member completes Insurance 101', () => completeCourse(maria, courses[2]))
@@ -288,6 +355,7 @@ try {
   await step(19, 'Approved member can access and complete the simulator', async () => {
     await maria.goto(`${BASE}/lava-portal/simulator`)
     await text(maria, 'Approved. Good luck!')
+    await maria.getByTestId('simulator-activity').nth(2).waitFor()
     assert(await maria.getByTestId('simulator-activity').count() === 3, 'expected 3 activities')
     await maria.getByTestId('simulator-activity').first().click()
     await maria.getByTestId('simulator-screen').waitFor()
@@ -374,6 +442,32 @@ try {
       return api(dan, '/rest/v1/lava_content?select=key')
     })()
     assert(r.status === 200 && r.body.length === 0, JSON.stringify(r).slice(0, 120))
+  })
+
+  console.log('\nLAVA branding')
+  await step('B1', 'LAVA portal uses the LAVA logo, red buttons/tabs, charcoal header and Poppins', async () => {
+    await maria.goto(`${BASE}/lava-portal/careers`)
+    const logoOk = await maria.locator('header img[alt="LAVA Automation"]').evaluate((img) => img.complete && img.naturalWidth > 0)
+    assert(logoOk, 'logo not loaded')
+    const style = await maria.evaluate(() => {
+      const tab = [...document.querySelectorAll('nav[aria-label="LAVA portal"] a')].find((a) => a.getAttribute('aria-current') === 'page')
+      const header = document.querySelector('.theme-lava header')
+      return { tab: getComputedStyle(tab).backgroundColor, header: getComputedStyle(header).backgroundColor, font: getComputedStyle(header).fontFamily }
+    })
+    assert(style.tab === 'rgb(229, 39, 36)', `active tab ${style.tab}`)
+    assert(style.header === 'rgb(34, 33, 42)', `header ${style.header}`)
+    assert(/Poppins/.test(style.font), `font ${style.font}`)
+    await maria.goto(`${BASE}/lava-portal/simulator`)
+    const btn = await maria.getByRole('button', { name: /Request access again|Request Simulator Access/ }).count()
+    if (btn) assert(await maria.getByRole('button', { name: /Request/ }).first().evaluate((b) => getComputedStyle(b).backgroundColor) === 'rgb(229, 39, 36)', 'button not LAVA red')
+  })
+  await step('B2', 'Dashboard LAVA card is LAVA-branded; the rest of the academy keeps its own colors', async () => {
+    await maria.goto(`${BASE}/dashboard`)
+    const card = maria.getByTestId('path-card').first()
+    assert(await card.locator('img[alt="LAVA Automation"]').evaluate((img) => img.complete && img.naturalWidth > 0), 'card logo')
+    assert(await card.evaluate((c) => getComputedStyle(c).backgroundColor) === 'rgb(34, 33, 42)', 'card background')
+    const navy = await maria.evaluate(() => getComputedStyle(document.querySelector('aside')).backgroundColor)
+    assert(navy !== 'rgb(34, 33, 42)', 'academy sidebar recolored')
   })
 
   console.log('\nlayout')

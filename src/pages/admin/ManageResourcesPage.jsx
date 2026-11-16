@@ -44,6 +44,8 @@ function Segmented({ options, value, onChange, label }) {
 }
 
 const StatusBadge = ({ status }) => (status === 'published' ? <Badge tone="mint">Published</Badge> : <Badge tone="amber">Draft</Badge>)
+/** LAVA lesson materials are managed in Admin → LAVA Applicants and hidden from the member library. */
+const LavaBadge = ({ r }) => (r.audience === 'lava' ? <Badge tone="red">LAVA</Badge> : null)
 
 export default function ManageResourcesPage() {
   const { isPreview } = useAuth()
@@ -246,7 +248,7 @@ export default function ManageResourcesPage() {
                         </div>
                       </td>
                       <td className="px-3 py-3"><ResourceTypeBadge type={r.resource_type} /></td>
-                      <td className="px-3 py-3"><StatusBadge status={r.status} /></td>
+                      <td className="px-3 py-3"><StatusBadge status={r.status} /> <LavaBadge r={r} /></td>
                       <td className="whitespace-nowrap px-3 py-3 text-slate-600">{formatDate(r.created_at)}</td>
                       <td className="whitespace-nowrap px-3 py-3 text-slate-600">{formatDate(r.updated_at)}</td>
                       <td className="px-5 py-2">{actions(r)}</td>
@@ -262,7 +264,7 @@ export default function ManageResourcesPage() {
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-sm font-medium text-navy-900">{r.title}</p>
                       <div className="mt-1 flex flex-wrap items-center gap-1.5 text-xs text-slate-500">
-                        <ResourceTypeBadge type={r.resource_type} /> <StatusBadge status={r.status} /> {r.category?.name ?? 'No category'} · Updated {formatDate(r.updated_at)}
+                        <ResourceTypeBadge type={r.resource_type} /> <StatusBadge status={r.status} /> <LavaBadge r={r} /> {r.category?.name ?? 'No category'} · Updated {formatDate(r.updated_at)}
                       </div>
                       {actions(r)}
                     </div>

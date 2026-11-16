@@ -25,7 +25,44 @@
   --color-mint-500: #2fa077;
   --color-mint-600: #218160;
   --color-mint-700: #1b674e;
+
+  /* LAVA Automation brand red (lavaautomation.com: #E52724, hover #BF211E) */
+  --color-lava-50: #fdf1f1;
+  --color-lava-100: #fbdcdb;
+  --color-lava-200: #f6b7b6;
+  --color-lava-300: #ef8684;
+  --color-lava-400: #ea5552;
+  --color-lava-500: #e52724;
+  --color-lava-600: #bf211e;
+  --color-lava-700: #9c1b19;
+  --color-lava-800: #7a1513;
+  --color-lava-900: #5a100e;
 }
+
+/*
+ * LAVA Automation theme — applied to the LAVA applicant portal and LAVA
+ * admin screens only. Re-maps the app's navy scale to LAVA's charcoal
+ * (#22212A) and makes primary buttons, progress bars and focus rings LAVA
+ * red, with Poppins as the typeface. Green stays for "completed / passed".
+ */
+.theme-lava {
+  --color-navy-50: #f5f5f7;
+  --color-navy-100: #e9e9ee;
+  --color-navy-200: #d3d2db;
+  --color-navy-300: #aaa9b5;
+  --color-navy-400: #7b7a88;
+  --color-navy-500: #5d5c69;
+  --color-navy-600: #46454f;
+  --color-navy-700: #37363f;
+  --color-navy-800: #2c2b34;
+  --color-navy-900: #22212a;
+  --color-navy-950: #17161d;
+  --btn-primary: var(--color-lava-500);
+  --btn-primary-hover: var(--color-lava-600);
+  --progress-fill: var(--color-lava-500);
+  font-family: "Poppins", ui-sans-serif, system-ui, sans-serif;
+}
+.theme-lava :focus-visible { outline-color: var(--color-lava-500); }
 
 @layer base {
   html { -webkit-font-smoothing: antialiased; }

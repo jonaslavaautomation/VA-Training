@@ -432,8 +432,8 @@ console.log('\nschema audit (phase 6)')
 await as('postgres', null, async () => {
   const tables = (await q(`select c.relname, c.relrowsecurity from pg_class c where c.relnamespace = 'public'::regnamespace and c.relkind = 'r' order by 1`))
   const names = tables.map((t) => t.relname).join(',')
-  names === 'activity_logs,announcements,categories,favorites,lava_agreements,lava_assessments,lava_attempts,lava_content,lava_courses,lava_lesson_progress,lava_lessons,lava_positions,lava_questions,lava_simulator_requests,learning_progress,portal_settings,profiles,training_resources'
-    ? ok('exactly the 18 expected tables exist (8 core + 10 LAVA portal, no duplicates)') : bad('tables', names)
+  names === 'activity_logs,announcements,categories,favorites,lava_agreements,lava_assessments,lava_attempts,lava_content,lava_courses,lava_lesson_materials,lava_lesson_progress,lava_lessons,lava_positions,lava_questions,lava_simulator_requests,learning_progress,portal_settings,profiles,training_resources'
+    ? ok('exactly the 19 expected tables exist (8 core + 11 LAVA portal, no duplicates)') : bad('tables', names)
   const noRls = tables.filter((t) => !t.relrowsecurity).map((t) => t.relname)
   noRls.length === 0 ? ok('Row Level Security is enabled on every table') : bad('RLS disabled on', noRls.join(','))
   const unindexed = await q(`

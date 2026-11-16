@@ -6,25 +6,25 @@ import { ARRANGEMENT_TEXT } from '@/services/lavaService'
 /** The 45-day onsite → work-from-home disclosure. Shown on every LAVA opportunity page. */
 export function ArrangementNotice({ compact = false }) {
   return (
-    <section aria-label="LAVA working arrangement" data-testid="arrangement-notice" className="rounded-2xl bg-amber-50 p-5 ring-1 ring-inset ring-amber-200">
+    <section aria-label="LAVA working arrangement" data-testid="arrangement-notice" className="rounded-2xl bg-lava-50 p-5 ring-1 ring-inset ring-lava-200">
       <div className="flex items-start gap-3">
-        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-100 text-amber-700">
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-lava-500 text-white">
           <CalendarClock className="h-5 w-5" />
         </div>
         <div className="min-w-0">
-          <p className="text-xs font-semibold uppercase tracking-wider text-amber-700">Important: working arrangement</p>
+          <p className="text-xs font-semibold uppercase tracking-wider text-lava-600">Important: working arrangement</p>
           <p className="mt-1 text-sm font-medium leading-6 text-navy-900">{ARRANGEMENT_TEXT}</p>
           {!compact && (
             <>
               <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
-                <div className="flex items-center gap-2 rounded-xl bg-white/70 px-3 py-2 text-sm text-navy-900 ring-1 ring-amber-200">
-                  <Building2 className="h-4 w-4 shrink-0 text-amber-700" /> <span><strong>Days 1–45:</strong> onsite training</span>
+                <div className="flex items-center gap-2 rounded-xl bg-white/70 px-3 py-2 text-sm text-navy-900 ring-1 ring-lava-200">
+                  <Building2 className="h-4 w-4 shrink-0 text-lava-600" /> <span><strong>Days 1–45:</strong> onsite training</span>
                 </div>
-                <div className="flex items-center gap-2 rounded-xl bg-white/70 px-3 py-2 text-sm text-navy-900 ring-1 ring-amber-200">
-                  <Home className="h-4 w-4 shrink-0 text-amber-700" /> <span><strong>After day 45:</strong> work from home</span>
+                <div className="flex items-center gap-2 rounded-xl bg-white/70 px-3 py-2 text-sm text-navy-900 ring-1 ring-lava-200">
+                  <Home className="h-4 w-4 shrink-0 text-lava-600" /> <span><strong>After day 45:</strong> work from home</span>
                 </div>
               </div>
-              <p className="mt-3 text-xs text-amber-800">These roles are not fully remote from the first day. You’ll be asked to confirm this before starting the preparation courses.</p>
+              <p className="mt-3 text-xs font-medium text-lava-700">These roles are not fully remote from the first day. You’ll be asked to confirm this before starting the preparation courses.</p>
             </>
           )}
         </div>
@@ -53,7 +53,7 @@ export function RequestBadge({ status }) {
 }
 
 export function HiringBadge({ status }) {
-  if (status === 'open') return <Badge tone="mint">Now hiring</Badge>
+  if (status === 'open') return <Badge tone="red">Now hiring</Badge>
   if (status === 'closed') return <Badge tone="gray">Not currently hiring</Badge>
   if (status === 'archived') return <Badge tone="gray">Archived</Badge>
   return <Badge tone="amber">Draft</Badge>

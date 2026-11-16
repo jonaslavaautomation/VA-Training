@@ -9,7 +9,9 @@ const MIGRATIONS = readdirSync(`${ROOT}supabase/migrations`).filter((f) => f.end
 const read = (p) => readFileSync(`${ROOT}${p}`, 'utf8')
 const SCRIPT1 = read('supabase/setup/1_enable_create_account.sql')
 const SCRIPT2 = read('supabase/setup/2_lava_portal.sql')
+const SCRIPT3 = read('supabase/setup/3_lava_lesson_materials.sql')
 const UP_TO_SCRIPT1 = MIGRATIONS.findIndex((f) => f.startsWith('20261122')) // migrations covered before the LAVA script
+const UP_TO_SCRIPT2 = MIGRATIONS.findIndex((f) => f.startsWith('20261123')) // …and before the lesson-materials script
 
 let passed = 0
 let failed = 0
@@ -98,7 +100,7 @@ console.log('\nSTEP 2 — 2_lava_portal.sql')
   const counts = (await db.query(`select (select count(*)::int from public.lava_courses) c, (select count(*)::int from public.lava_assessments) a, (select count(*)::int from public.lava_positions) p`)).rows[0]
   counts.c === 6 && counts.a === 9 && counts.p === 0 ? ok('6 courses, 9 assessments, no positions (no duplicates after two runs)') : bad('counts', JSON.stringify(counts))
   let later = null
-  for (const f of MIGRATIONS.slice(UP_TO_SCRIPT1)) { const r = await run(db, read(`supabase/migrations/${f}`)); if (r.error) later = `${f}: ${r.error}` }
+  for (const f of MIGRATIONS.slice(UP_TO_SCRIPT1, UP_TO_SCRIPT2)) { const r = await run(db, read(`supabase/migrations/${f}`)); if (r.error) later = `${f}: ${r.error}` }
   later ? bad('a later `supabase db push` still works', later) : ok('a later `supabase db push` of the same migrations still works')
   const [m] = (await db.query(`select count(*)::int n from public.profiles`)).rows
   m.n === 1 ? ok('existing accounts untouched') : bad('profiles', m.n)
@@ -107,6 +109,28 @@ console.log('\nSTEP 2 — 2_lava_portal.sql')
   const db = await freshDb(0)
   const r = await run(db, SCRIPT2)
   r.error?.includes('earlier database setup is missing') ? ok('stops with a clear message if the earlier setup is missing') : bad('missing prerequisite', r.error ?? 'no error')
+}
+
+console.log('\nSTEP 3 — 3_lava_lesson_materials.sql')
+{
+  const db = await freshDb(6)
+  await run(db, SCRIPT1)
+  await run(db, SCRIPT2)
+  await db.query(`insert into public.training_resources (title, resource_type, storage_path, status) values ('Old guide', 'PDF', 'old/guide.pdf', 'published')`)
+  const r1 = await run(db, SCRIPT3)
+  r1.rows?.[0]?.result?.startsWith('Lesson videos') ? ok('runs after STEP 2') : bad('first run', r1.error ?? JSON.stringify(r1.rows))
+  const r2 = await run(db, SCRIPT3)
+  r2.rows?.[0]?.result ? ok('safe to run again') : bad('second run', r2.error)
+  const [old] = (await db.query(`select audience from public.training_resources where title = 'Old guide'`)).rows
+  old?.audience === 'library' ? ok('existing library files stay in the library') : bad('existing file', JSON.stringify(old))
+  let later = null
+  for (const f of MIGRATIONS.slice(UP_TO_SCRIPT2)) { const r = await run(db, read(`supabase/migrations/${f}`)); if (r.error) later = `${f}: ${r.error}` }
+  later ? bad('a later `supabase db push` still works', later) : ok('a later `supabase db push` of the same migration still works')
+}
+{
+  const db = await freshDb(6)
+  const r = await run(db, SCRIPT3)
+  r.error?.includes('2_lava_portal.sql first') ? ok('stops with a clear message if STEP 2 is missing') : bad('missing prerequisite', r.error ?? 'no error')
 }
 
 console.log(`\n${passed} passed, ${failed} failed`)

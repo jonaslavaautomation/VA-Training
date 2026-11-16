@@ -1,5 +1,7 @@
 # LAVA Automation Applicant Portal (Phase 7A)
 
+**Branding:** the LAVA portal and the LAVA admin screens use LAVA Automation's branding from lavaautomation.com: the official white logo on charcoal **#22212A**, brand red **#E52724** (hover **#BF211E**) for buttons, active tabs and accents, white, and the **Poppins** typeface (bundled with the app, so no external requests). Green is kept only for "completed / passed". The rest of the VA Training Academy keeps its own navy/mint design. The theme is the `.theme-lava` class in `src/index.css`; the logo is `src/assets/lava/lava-logo-white.png`.
+
 The member dashboard offers two paths:
 
 1. **I Want to Apply to LAVA Automation** → `/lava-portal` (built in this phase)
@@ -12,7 +14,7 @@ The member dashboard offers two paths:
 | 1 | About LAVA (`/lava-portal`) | Company sections the admin has **published**, plus the 45-day notice |
 | 2 | Careers (`/lava-portal/careers`) | Open positions ("Now hiring") and closed ones ("Not currently hiring"). Salary shows only if an admin entered it; otherwise "To be announced" |
 | 3 | Agreement (`/lava-portal/agreement`) | Three required questions. The member must answer **Yes** to all three to unlock the courses. A **No** shows a polite explanation and keeps them locked; they can change their answers later |
-| 4 | Preparation (`/lava-portal/courses`) | Six courses in order, each with lessons (mark complete) and a quiz. Progress bars per course and overall |
+| 4 | Preparation (`/lava-portal/courses`) | Six courses in order, each with lessons (mark complete) and a quiz. Lessons show their videos (inline player) and PDFs (built-in viewer, with a download option). Progress bars per course and overall |
 | 5 | Assessments (`/lava-portal/assessments`) | Course quizzes, graded on the server. The pass mark is set per quiz (70% by default) |
 | 6 | Simulator (`/lava-portal/simulator`) | **Request Simulator Access** sends a request with status Pending. After an admin approves it, three simulated agency-desk activities open. If the request is rejected, the member sees the admin's note and can request again |
 
@@ -29,7 +31,7 @@ Agreeing is **not** an offer or a hiring decision. It doesn't change the member'
 | Applicants | Each member's three answers (read-only), agreement date, course progress and simulator status |
 | Company content | Edit the 6 company sections, the working-arrangement text and the agreement introduction. Each can be Draft or Published. A warning appears if you try to publish text that still has [placeholders] |
 | Positions | Add, edit, publish (hiring), close, archive or delete positions. Fields: title, niche, description, responsibilities, skills, qualifications, compensation, working arrangement |
-| Courses | Add, edit, reorder or delete courses and lessons. A lesson can attach a video or PDF already uploaded in **Upload Materials** (the existing storage is reused, not duplicated) |
+| Courses | Add, edit, reorder or delete courses and lessons. Each lesson has a **Videos & PDFs** button: upload several videos (MP4/WebM) and PDFs at once, set their titles, reorder or remove them, or attach a file already in the Training Library. Uploads use the same resumable upload and private storage as Upload Materials. LAVA files are marked as LAVA material: they are hidden from the general Training Library and listed in Manage Resources with a LAVA badge |
 | Assessments | Quizzes and simulator activities: questions, options, correct answer, explanation, and the simulator "screen" (email, record, form or note) |
 
 Lesson text formatting: a blank line starts a new paragraph, `## ` makes a heading, `- ` a bullet, `1. ` a numbered item, `> ` a highlighted tip, and `**bold**` bold text.
@@ -49,7 +51,9 @@ Lesson text formatting: a blank line starts a new paragraph, `## ` makes a headi
 | `lava_positions` | positions | read **open/closed** | everything |
 | `lava_agreements` | one row per member: 3 answers, `agreed`, `answered_at`, `agreed_at` | read **own**; write only via `lava_submit_agreement()` | read all (no edits) |
 | `lava_courses` | courses | read published | everything |
-| `lava_lessons` | lessons (+ optional `resource_id` → `training_resources`) | read **only after agreeing** | everything |
+| `lava_lessons` | lessons | read **only after agreeing** | everything |
+| `lava_lesson_materials` | videos/PDFs per lesson → `training_resources` (migration 013) | read **only after agreeing** | everything |
+| `training_resources.audience` | `library` (default) or `lava` | LAVA files (row **and** file) readable **only after agreeing**; hidden from the library | everything |
 | `lava_lesson_progress` | lesson completions | read/add/remove **own**, after agreeing | read all |
 | `lava_assessments` | quizzes + simulator activities | read published titles | everything |
 | `lava_questions` | questions **with answers** | **no access** (questions arrive without answers via `lava_get_assessment()`) | everything |
@@ -78,6 +82,6 @@ The starter content lives in `supabase/content/lava/`:
 
 ## Tests
 
-- `npm run test:db` → `supabase/tests/lava.test.mjs`: 79 database checks covering RLS, the functions, the approval workflow and inactive accounts.
-- `npm run test:lava`: the full member and admin journey in Chrome (38 checks). The LAVA data runs the **real migrations** in a temporary database, so the permission checks hit the actual rules.
+- `npm run test:db` → `supabase/tests/lava.test.mjs`: 91 database checks covering RLS, the functions, the approval workflow and inactive accounts.
+- `npm run test:lava`: the full member and admin journey in Chrome (44 checks, including lesson video/PDF upload and playback, and the LAVA branding). The LAVA data runs the **real migrations** in a temporary database, so the permission checks hit the actual rules.
 - A simulated backend is still not your real Supabase project. After running the setup script on the live project, do the live check in `PRODUCTION_CHECKLIST.md`.

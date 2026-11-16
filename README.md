@@ -33,7 +33,7 @@ New members create their own account on the sign-in page, or an administrator cr
 - **Categories:** create, rename, hide, safe delete.
 - **Announcements:** draft, publish, schedule, archive.
 - **Activity Logs:** a record of who did what, including every sign-in (recorded by the server).
-- **LAVA Applicant Management** (`/admin/lava`): edit company information (drafts until published), manage positions and salaries, courses and lessons (attach library videos/PDFs), assessments and questions, view applicants' agreements and progress, and approve or reject simulator access with a note.
+- **LAVA Applicant Management** (`/admin/lava`): edit company information (drafts until published), manage positions and salaries, courses and lessons (**upload videos and PDFs for each lesson**), assessments and questions, view applicants' agreements and progress, and approve or reject simulator access with a note.
 
 **Security:**
 - Every rule is enforced by the database (Row Level Security), not just by hiding buttons.
@@ -124,6 +124,7 @@ Full steps: **[DEPLOYMENT_GUIDE.md §2–6](DEPLOYMENT_GUIDE.md)**. Details: [su
 | `20261121100000_remove_alerts_admin_status.sql` | no alert emails; admin activate/deactivate/edit functions |
 | `20261122100000_lava_portal.sql` | LAVA applicant portal: 10 tables, RLS, grading + approval functions |
 | `20261122100100_lava_seed_content.sql` | LAVA starter content: 6 courses, quizzes, 3 simulator activities (generated) |
+| `20261123100000_lava_lesson_materials.sql` | LAVA lesson videos & PDFs (reuses Training Library storage; LAVA-only access) |
 
 3. **Storage buckets** are created by the migrations, all **private**:
 
@@ -137,7 +138,7 @@ Full steps: **[DEPLOYMENT_GUIDE.md §2–6](DEPLOYMENT_GUIDE.md)**. Details: [su
    The project-wide limit (Storage → Settings) also applies. **Free plan: 50 MB per file.**
 4. **Edge Function (optional):** `npx supabase functions deploy admin-members`, after setting the secrets above. Only needed for **Add member** by invitation, access emails and email changes.
 5. **Create account + member controls:** one copy-paste SQL script, no terminal. See [DEPLOYMENT_GUIDE.md §4b](DEPLOYMENT_GUIDE.md).
-   **LAVA applicant portal:** a second copy-paste script, `supabase/setup/2_lava_portal.sql`. See [DEPLOYMENT_GUIDE.md §4c](DEPLOYMENT_GUIDE.md).
+   **LAVA applicant portal:** copy-paste `supabase/setup/2_lava_portal.sql`, then `3_lava_lesson_materials.sql`. See [DEPLOYMENT_GUIDE.md §4c](DEPLOYMENT_GUIDE.md).
 6. **Auth settings:**
    - turn **on** "Allow new users to sign up" (for the Create account page) and turn **off** "Confirm email" (new members get in right away);
    - password minimum 8 with letters and digits;
@@ -230,10 +231,10 @@ va-training-academy/
 ├── DEPLOYMENT_GUIDE.md · PRODUCTION_CHECKLIST.md · SECURITY_AUDIT.md · TEST_RESULTS.md
 ├── docs/SECURITY_CHECKLIST.md # Manual + API security tests
 ├── supabase/
-│   ├── migrations/            # 12 database migrations (apply in order)
+│   ├── migrations/            # 13 database migrations (apply in order)
 │   ├── content/lava/          # LAVA course content (JSON) + seed builder (npm run build:lava-seed)
 │   ├── functions/admin-members/   # Optional server function: add members by invitation, access emails
-│   ├── setup/                 # Copy-paste SQL: create_admins, 1_enable_create_account, 2_lava_portal
+│   ├── setup/                 # Copy-paste SQL: create_admins, 1_enable_create_account, 2_lava_portal, 3_lava_lesson_materials
 │   ├── tests/                 # npm run test:db (rls, lava, setup scripts)
 │   └── README.md              # Database, storage, email, limits
 ├── tests/e2e/                 # npm run test:e2e / test:responsive / test:lava

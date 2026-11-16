@@ -65,7 +65,7 @@ export default function LavaOverviewPage() {
 
       <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
         <Link to="/lava-portal/careers" className="group flex items-center gap-4 rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-200/70 transition hover:-translate-y-0.5 hover:shadow-md">
-          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-mint-50 text-mint-700"><Briefcase className="h-5 w-5" /></div>
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-lava-50 text-lava-600"><Briefcase className="h-5 w-5" /></div>
           <div className="min-w-0 flex-1">
             <p className="font-semibold text-navy-900">Explore career opportunities</p>
             <p className="text-sm text-slate-500">Positions, requirements and compensation.</p>

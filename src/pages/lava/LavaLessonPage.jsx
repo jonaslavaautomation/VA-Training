@@ -1,17 +1,18 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate, useOutletContext, useParams } from 'react-router-dom'
-import { ArrowLeft, ArrowRight, CheckCircle2, FileText, PlayCircle } from 'lucide-react'
+import { ArrowLeft, ArrowRight, CheckCircle2 } from 'lucide-react'
 import Card from '@/components/ui/Card'
 import Alert from '@/components/ui/Alert'
 import Skeleton from '@/components/ui/Skeleton'
 import EmptyState from '@/components/ui/EmptyState'
 import Button, { LinkButton } from '@/components/ui/Button'
 import RichText from '@/components/lava/RichText'
+import LessonMaterials from '@/components/lava/LessonMaterials'
 import { LockedPanel } from '@/components/lava/LavaUi'
 import { useAsync } from '@/hooks/useAsync'
 import { useAuth } from '@/hooks/useAuth'
 import { useToast } from '@/hooks/useToast'
-import { getCourse, getResourceTitles, setLessonComplete } from '@/services/lavaService'
+import { getCourse, getLessonMaterials, setLessonComplete } from '@/services/lavaService'
 import { toUserMessage } from '@/lib/errors'
 
 /** /lava-portal/courses/:slug/lessons/:lessonId — reading view with "mark complete". */
@@ -24,7 +25,7 @@ export default function LavaLessonPage() {
   const unlocked = agreed || isAdmin
   const { data: course, loading, error, reload, setData } = useAsync(() => (unlocked ? getCourse(slug, user.id) : Promise.resolve(null)), [slug, unlocked])
   const [saving, setSaving] = useState(false)
-  const [attachment, setAttachment] = useState(null)
+  const [materials, setMaterials] = useState(null)
 
   const index = course?.lessons.findIndex((l) => l.id === lessonId) ?? -1
   const lesson = index >= 0 ? course.lessons[index] : null
@@ -33,10 +34,12 @@ export default function LavaLessonPage() {
 
   useEffect(() => { window.scrollTo?.(0, 0) }, [lessonId])
   useEffect(() => {
-    setAttachment(null)
-    if (!lesson?.resource_id) return
-    getResourceTitles([lesson.resource_id]).then((m) => setAttachment(m[lesson.resource_id] ?? null)).catch(() => {})
-  }, [lesson?.resource_id])
+    setMaterials(null)
+    if (!lesson?.id) return
+    let active = true
+    getLessonMaterials([lesson.id]).then((m) => active && setMaterials(m[lesson.id] ?? [])).catch(() => active && setMaterials([]))
+    return () => { active = false }
+  }, [lesson?.id])
 
   if (!unlocked) return <LockedPanel />
   if (error) return <Alert type="error">{toUserMessage(error, 'Couldn’t load this lesson.')} <button onClick={reload} className="font-semibold underline">Try again</button></Alert>
@@ -66,13 +69,7 @@ export default function LavaLessonPage() {
         <p className="text-xs font-medium uppercase tracking-wider text-slate-400">Lesson {index + 1} of {course.lessons.length} · {lesson.minutes} min read</p>
         <h2 className="mt-1 text-2xl font-semibold tracking-tight text-navy-900">{lesson.title}</h2>
         {lesson.completed && <p className="mt-2 inline-flex items-center gap-1.5 text-sm font-medium text-mint-700"><CheckCircle2 className="h-4 w-4" /> Completed</p>}
-        {attachment && (
-          <Link to={`/library/${attachment.id}`} className="mt-5 flex items-center gap-3 rounded-xl bg-navy-50 p-4 text-sm ring-1 ring-navy-100 hover:bg-navy-100/60">
-            {attachment.resource_type === 'VIDEO' ? <PlayCircle className="h-5 w-5 text-navy-700" /> : <FileText className="h-5 w-5 text-navy-700" />}
-            <span className="min-w-0 flex-1"><span className="block text-xs text-slate-500">Lesson material</span><span className="font-medium text-navy-900">{attachment.title}</span></span>
-            <ArrowRight className="h-4 w-4 text-navy-400" />
-          </Link>
-        )}
+        {materials?.length > 0 && <div className="mt-6"><LessonMaterials items={materials} /></div>}
         <RichText text={lesson.body} className="mt-6" />
       </Card>
 

@@ -17,7 +17,7 @@ function List({ title, items }) {
   return (
     <div>
       <h4 className="text-sm font-semibold text-navy-900">{title}</h4>
-      <ul className="mt-1.5 list-disc space-y-1 pl-5 text-sm text-slate-600 marker:text-mint-500">{items.map((x, i) => <li key={i}>{x}</li>)}</ul>
+      <ul className="mt-1.5 list-disc space-y-1 pl-5 text-sm text-slate-600 marker:text-lava-500">{items.map((x, i) => <li key={i}>{x}</li>)}</ul>
     </div>
   )
 }
@@ -39,9 +39,9 @@ function PositionCard({ p }) {
             <Wallet className="mt-0.5 h-4 w-4 shrink-0 text-slate-400" />
             <span><span className="block text-xs text-slate-500">Compensation</span><span className="font-medium text-navy-900" data-testid="compensation">{p.compensation || 'To be announced'}</span></span>
           </div>
-          <div className="flex items-start gap-2 rounded-xl bg-amber-50 px-3 py-2 text-sm ring-1 ring-inset ring-amber-200">
-            <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
-            <span><span className="block text-xs text-amber-700">Working arrangement</span><span className="font-medium text-navy-900">{p.work_arrangement}</span></span>
+          <div className="flex items-start gap-2 rounded-xl bg-lava-50 px-3 py-2 text-sm ring-1 ring-inset ring-lava-200">
+            <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-lava-600" />
+            <span><span className="block text-xs text-lava-700">Working arrangement</span><span className="font-medium text-navy-900">{p.work_arrangement}</span></span>
           </div>
         </div>
         {p.description && <p className="mt-4 whitespace-pre-line text-sm leading-6 text-slate-600">{p.description}</p>}
@@ -82,7 +82,7 @@ export default function LavaCareersPage() {
           <h2 className="text-xl font-semibold text-navy-900">Career opportunities</h2>
           <p className="text-sm text-slate-500">Positions, compensation and hiring status are provided by LAVA Automation’s administrators.</p>
         </div>
-        {!loading && data?.length > 0 && <Badge tone={open.length ? 'mint' : 'gray'}>{open.length} open position{open.length === 1 ? '' : 's'}</Badge>}
+        {!loading && data?.length > 0 && <Badge tone={open.length ? 'red' : 'gray'}>{open.length} open position{open.length === 1 ? '' : 's'}</Badge>}
       </div>
 
       {error ? (

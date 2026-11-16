@@ -11,7 +11,7 @@ import { createCategory as createCategoryRecord } from '@/services/categoryServi
 import { safeFileName } from '@/lib/media'
 
 export const ADMIN_RESOURCE_COLUMNS =
-  'id, title, description, category_id, resource_type, storage_path, thumbnail_path, file_size, duration_seconds, page_count, status, created_at, updated_at, category:categories(id, name, slug, icon, color), uploader:profiles(first_name, last_name, email)'
+  'id, title, description, category_id, resource_type, storage_path, thumbnail_path, file_size, duration_seconds, page_count, status, audience, created_at, updated_at, category:categories(id, name, slug, icon, color), uploader:profiles(first_name, last_name, email)'
 
 const PREVIEW_MESSAGE = 'Uploading and managing files needs a connected Supabase project. Add your keys to .env.local to enable it.'
 

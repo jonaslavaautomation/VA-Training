@@ -38,7 +38,7 @@ export function beginFileUpload({ kind, file, contentType, onProgress, onStatus 
  * A failed thumbnail upload doesn't block the resource (thumbnailFailed = true);
  * a failed record insert removes every uploaded file and throws.
  */
-export async function saveResource({ resourceId, kind, path, file, title, description, categoryId, status, thumbnail, durationSeconds, pageCount }) {
+export async function saveResource({ resourceId, kind, path, file, title, description, categoryId, status, thumbnail, durationSeconds, pageCount, audience = 'library' }) {
   let thumbnailPath = null
   let thumbnailFailed = false
   if (thumbnail) {
@@ -62,7 +62,7 @@ export async function saveResource({ resourceId, kind, path, file, title, descri
     .insert({
       id: resourceId,
       title: title.trim(),
-      description: description.trim() || null,
+      description: description?.trim() || null,
       category_id: categoryId || null,
       resource_type: kind,
       storage_path: path,
@@ -71,6 +71,7 @@ export async function saveResource({ resourceId, kind, path, file, title, descri
       duration_seconds: durationSeconds ?? null,
       page_count: pageCount ?? null,
       status,
+      audience,
     })
     .select(ADMIN_RESOURCE_COLUMNS)
     .single()

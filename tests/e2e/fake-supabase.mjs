@@ -90,7 +90,9 @@ function applyFilters(params, rows) {
     const i = v.indexOf('.')
     const op = v.slice(0, i)
     const val = v.slice(i + 1)
-    if (op === 'eq') rows = rows.filter((r) => String(r[k]) === val)
+    // training_resources.audience: rows created before Phase 7A count as library material
+    const cellOf = (r) => (k === 'audience' ? r[k] ?? 'library' : r[k])
+    if (op === 'eq') rows = rows.filter((r) => String(cellOf(r)) === val)
     if (op === 'neq') rows = rows.filter((r) => String(r[k]) !== val)
     if (op === 'in') { const set = val.replace(/^\(|\)$/g, '').split(',').map((x) => x.replace(/"/g, '')); rows = rows.filter((r) => set.includes(String(r[k]))) }
     if (op === 'is' && val === 'null') rows = rows.filter((r) => r[k] === null || r[k] === undefined)

@@ -21,6 +21,7 @@ import { useAuth } from '@/hooks/useAuth'
 import { useAsync } from '@/hooks/useAsync'
 import { useFavoriteToggle } from '@/hooks/useFavoriteToggle'
 import * as resources from '@/services/resourceService'
+import lavaLogo from '@/assets/lava/lava-logo-white.png'
 
 function greeting() {
   const h = new Date().getHours()
@@ -44,18 +45,19 @@ async function loadDashboard() {
 }
 
 /** The two career paths at the top of the dashboard (Phase 7A: only LAVA is built). */
-function PathCard({ to, icon: Icon, eyebrow, title, description, action, accent, soon }) {
+function PathCard({ to, icon: Icon, eyebrow, title, description, action, accent, soon, logo }) {
   return (
-    <Link to={to} data-testid="path-card" className={`group relative flex flex-col overflow-hidden rounded-2xl p-6 shadow-sm ring-1 transition hover:-translate-y-0.5 hover:shadow-md ${accent ? 'bg-white ring-mint-300' : 'bg-white ring-slate-200/70'}`}>
-      {accent && <div className="pointer-events-none absolute -right-12 -top-12 h-40 w-40 rounded-full bg-mint-400/15 blur-2xl" />}
-      <div className="flex items-start justify-between gap-3">
-        <div className={`flex h-12 w-12 items-center justify-center rounded-2xl ${accent ? 'bg-navy-900 text-mint-300' : 'bg-slate-100 text-slate-600'}`}><Icon className="h-6 w-6" /></div>
-        {soon ? <Badge tone="gray">Coming soon</Badge> : <Badge tone="mint">Now open</Badge>}
+    <Link to={to} data-testid="path-card" className={`group relative flex flex-col overflow-hidden rounded-2xl p-6 shadow-sm ring-1 transition hover:-translate-y-0.5 hover:shadow-md ${accent ? 'bg-[#22212a] ring-[#22212a]' : 'bg-white ring-slate-200/70'}`}>
+      {accent && <div className="pointer-events-none absolute inset-x-0 top-0 h-1 bg-lava-500" />}
+      {accent && <div className="pointer-events-none absolute -right-16 -top-16 h-48 w-48 rounded-full bg-lava-500/25 blur-3xl" />}
+      <div className="relative flex items-start justify-between gap-3">
+        {logo ? <img src={logo} alt="LAVA Automation" width={424} height={134} className="h-9 w-auto" /> : <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-100 text-slate-600"><Icon className="h-6 w-6" /></div>}
+        {soon ? <Badge tone="gray">Coming soon</Badge> : <Badge tone="red">Now open</Badge>}
       </div>
-      <p className="mt-4 text-xs font-semibold uppercase tracking-wider text-slate-400">{eyebrow}</p>
-      <h2 className="mt-1 text-lg font-semibold text-navy-900">{title}</h2>
-      <p className="mt-2 flex-1 text-sm leading-6 text-slate-500">{description}</p>
-      <span className={`mt-5 inline-flex h-10 items-center justify-center gap-2 self-start rounded-lg px-4 text-sm font-medium transition ${accent ? 'bg-navy-900 text-white group-hover:bg-navy-800' : 'bg-white text-navy-900 ring-1 ring-inset ring-slate-200 group-hover:bg-slate-50'}`}>
+      <p className={`relative mt-4 text-xs font-semibold uppercase tracking-wider ${accent ? 'text-lava-400' : 'text-slate-400'}`}>{eyebrow}</p>
+      <h2 className={`relative mt-1 text-lg font-semibold ${accent ? 'text-white' : 'text-navy-900'}`}>{title}</h2>
+      <p className={`relative mt-2 flex-1 text-sm leading-6 ${accent ? 'text-slate-300' : 'text-slate-500'}`}>{description}</p>
+      <span className={`relative mt-5 inline-flex h-10 items-center justify-center gap-2 self-start rounded-lg px-4 text-sm font-medium transition ${accent ? 'bg-lava-500 text-white group-hover:bg-lava-600' : 'bg-white text-navy-900 ring-1 ring-inset ring-slate-200 group-hover:bg-slate-50'}`}>
         {action} <ArrowRight className="h-4 w-4" />
       </span>
     </Link>
@@ -143,6 +145,7 @@ export default function MemberDashboardPage() {
             description="Interested in becoming part of LAVA Automation? Discover our company, explore our career opportunities, and prepare yourself through our specialized training program."
             action="Explore LAVA Opportunities"
             accent
+            logo={lavaLogo}
           />
           <PathCard
             to="/explore-niches"

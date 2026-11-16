@@ -1,6 +1,7 @@
 import { NavLink, Outlet } from 'react-router-dom'
 import PageHeader from '@/components/ui/PageHeader'
 import { LinkButton } from '@/components/ui/Button'
+import '@/components/lava/lavaFonts'
 
 const tabs = [
   { to: '/admin/lava', label: 'Overview', end: true },
@@ -15,7 +16,7 @@ const tabs = [
 /** /admin/lava/* — LAVA Applicant Management. */
 export default function AdminLavaLayout() {
   return (
-    <>
+    <div className="theme-lava">
       <PageHeader
         title="LAVA Applicant Management"
         description="Company information, hiring opportunities, preparation courses, assessments and simulator access."
@@ -24,13 +25,13 @@ export default function AdminLavaLayout() {
       <nav aria-label="LAVA management" className="-mx-1 mb-6 overflow-x-auto px-1 pb-1">
         <div className="flex w-max min-w-full gap-1 rounded-xl bg-slate-100 p-1">
           {tabs.map(({ to, label, end }) => (
-            <NavLink key={to} to={to} end={end} className={({ isActive }) => `whitespace-nowrap rounded-lg px-3 py-1.5 text-sm font-medium transition ${isActive ? 'bg-white text-navy-900 shadow-sm' : 'text-slate-500 hover:text-navy-900'}`}>
+            <NavLink key={to} to={to} end={end} className={({ isActive }) => `whitespace-nowrap rounded-lg px-3 py-1.5 text-sm font-medium transition ${isActive ? 'bg-lava-500 text-white shadow-sm' : 'text-slate-500 hover:text-lava-700'}`}>
               {label}
             </NavLink>
           ))}
         </div>
       </nav>
       <Outlet />
-    </>
+    </div>
   )
 }

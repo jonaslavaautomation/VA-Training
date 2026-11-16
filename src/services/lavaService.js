@@ -12,6 +12,9 @@
  */
 import { supabase, isPreviewMode } from '@/lib/supabase'
 import { userError } from '@/lib/errors'
+import { detectContentType, validateUploadFile } from '@/lib/media'
+import { effectiveLimitBytes, UPLOAD_RULES } from '@/config/constants'
+import { beginFileUpload, saveResource } from '@/services/uploadService'
 
 const PREVIEW_MESSAGE = 'The LAVA portal needs a connected Supabase project. Add your keys to .env.local to enable it.'
 const SETUP_MESSAGE = 'The LAVA portal isn’t set up on the database yet. Run the Phase 7A migrations (see DEPLOYMENT_GUIDE.md).'
@@ -196,11 +199,79 @@ export async function setLessonComplete(userId, lessonId, complete) {
   }
 }
 
-/** Title + description for an attached Training Library resource (members: published only). */
-export async function getResourceTitles(ids) {
-  if (!ids.length) return {}
-  const rows = await run(supabase.from('training_resources').select('id, title, resource_type').in('id', ids))
-  return Object.fromEntries(rows.map((r) => [r.id, r]))
+const MATERIAL_COLS = 'id, title, resource_type, storage_path, file_size, duration_seconds, page_count, status, audience'
+
+/**
+ * Videos and PDFs of one or more lessons, in order: { [lessonId]: resource[] }.
+ * Members only receive these after agreeing (RLS on both tables and on the files).
+ */
+export async function getLessonMaterials(lessonIds) {
+  guard()
+  if (!lessonIds.length) return {}
+  const links = await run(supabase.from('lava_lesson_materials').select('lesson_id, resource_id, sort_order').in('lesson_id', lessonIds))
+  const ids = [...new Set(links.map((l) => l.resource_id))]
+  const resources = ids.length ? await run(supabase.from('training_resources').select(MATERIAL_COLS).in('id', ids)) : []
+  const byId = Object.fromEntries(resources.map((r) => [r.id, r]))
+  const out = Object.fromEntries(lessonIds.map((id) => [id, []]))
+  for (const l of links.sort((a, b) => a.sort_order - b.sort_order)) {
+    if (byId[l.resource_id]) out[l.lesson_id].push({ ...byId[l.resource_id], sort_order: l.sort_order })
+  }
+  return out
+}
+
+export const materialKind = (file) =>
+  /\.pdf$/i.test(file.name) || file.type === 'application/pdf' ? 'PDF' : /\.(mp4|webm)$/i.test(file.name) || file.type.startsWith('video/') ? 'VIDEO' : null
+
+/**
+ * Uploads a video or PDF for a lesson through the existing Training Library
+ * pipeline (resumable upload into the private bucket, then a training_resources
+ * row marked audience 'lava'), then attaches it to the lesson.
+ * Returns { task, done } — done resolves to the saved resource.
+ */
+export function uploadLessonMaterial({ lessonId, file, title, sortOrder = 0, onProgress, onStatus }) {
+  guard()
+  const kind = materialKind(file)
+  if (!kind) throw userError('Choose a PDF, MP4 or WebM file.')
+  let started = null
+  const done = (async () => {
+    const problem = await validateUploadFile(file, kind, effectiveLimitBytes(UPLOAD_RULES[kind]))
+    if (problem) throw userError(problem)
+    const contentType = await detectContentType(file)
+    started = beginFileUpload({ kind, file, contentType, onProgress, onStatus })
+    const { path } = await started.task.done
+    const { resource } = await saveResource({
+      resourceId: started.resourceId,
+      kind,
+      path,
+      file,
+      title: (title || file.name.replace(/\.[^.]+$/, '').replace(/[-_]+/g, ' ')).trim().slice(0, 200),
+      description: '',
+      categoryId: null,
+      status: 'published',
+      audience: 'lava',
+    })
+    await run(supabase.from('lava_lesson_materials').insert({ lesson_id: lessonId, resource_id: resource.id, sort_order: sortOrder }))
+    return resource
+  })()
+  return { done, abort: () => started?.task.abort() }
+}
+
+/** Attach a file that already exists in the Training Library. */
+export async function attachLessonMaterial(lessonId, resourceId, sortOrder = 0) {
+  guard()
+  const { error } = await supabase.from('lava_lesson_materials').insert({ lesson_id: lessonId, resource_id: resourceId, sort_order: sortOrder })
+  if (error && error.code !== '23505') throw friendly(error)
+}
+
+/** Removes the file from the lesson (the file itself stays in Training Resources). */
+export async function detachLessonMaterial(lessonId, resourceId) {
+  guard()
+  await run(supabase.from('lava_lesson_materials').delete().eq('lesson_id', lessonId).eq('resource_id', resourceId))
+}
+
+export async function setMaterialOrder(lessonId, resourceId, sortOrder) {
+  guard()
+  await run(supabase.from('lava_lesson_materials').update({ sort_order: sortOrder }).eq('lesson_id', lessonId).eq('resource_id', resourceId))
 }
 
 /** Questions without answers. Throws a friendly error when locked. */
@@ -330,7 +401,7 @@ export async function swapOrder(table, a, b) {
 /** Training Library resources an admin can attach to a lesson (reuses existing uploads). */
 export async function listAttachableResources() {
   guard()
-  return run(supabase.from('training_resources').select('id, title, resource_type, status').order('title'))
+  return run(supabase.from('training_resources').select('id, title, resource_type, status, audience, file_size').order('title'))
 }
 
 export async function listAssessmentsAdmin() {
