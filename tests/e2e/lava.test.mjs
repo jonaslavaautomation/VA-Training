@@ -461,13 +461,19 @@ try {
     const btn = await maria.getByRole('button', { name: /Request access again|Request Simulator Access/ }).count()
     if (btn) assert(await maria.getByRole('button', { name: /Request/ }).first().evaluate((b) => getComputedStyle(b).backgroundColor) === 'rgb(229, 39, 36)', 'button not LAVA red')
   })
-  await step('B2', 'Dashboard LAVA card is LAVA-branded; the rest of the academy keeps its own colors', async () => {
+  await step('B2', 'Dashboard LAVA card and the whole app use LAVA red, charcoal and white', async () => {
     await maria.goto(`${BASE}/dashboard`)
     const card = maria.getByTestId('path-card').first()
     assert(await card.locator('img[alt="LAVA Automation"]').evaluate((img) => img.complete && img.naturalWidth > 0), 'card logo')
     assert(await card.evaluate((c) => getComputedStyle(c).backgroundColor) === 'rgb(34, 33, 42)', 'card background')
-    const navy = await maria.evaluate(() => getComputedStyle(document.querySelector('aside')).backgroundColor)
-    assert(navy !== 'rgb(34, 33, 42)', 'academy sidebar recolored')
+    const brand = await maria.evaluate(() => {
+      const aside = document.querySelector('aside')
+      const marker = aside.querySelector('a[aria-current="page"] > span[aria-hidden="true"]')
+      return { sidebar: getComputedStyle(aside).backgroundColor, marker: marker && getComputedStyle(marker).backgroundColor, font: getComputedStyle(document.body).fontFamily }
+    })
+    assert(brand.sidebar === 'rgb(34, 33, 42)', `sidebar ${brand.sidebar}`)
+    assert(brand.marker === 'rgb(229, 39, 36)', `active nav marker ${brand.marker}`)
+    assert(/Poppins/.test(brand.font), `font ${brand.font}`)
   })
 
   console.log('\nlayout')

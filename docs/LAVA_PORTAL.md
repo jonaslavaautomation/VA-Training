@@ -1,6 +1,6 @@
 # LAVA Automation Applicant Portal (Phase 7A)
 
-**Branding:** the LAVA portal and the LAVA admin screens use LAVA Automation's branding from lavaautomation.com: the official white logo on charcoal **#22212A**, brand red **#E52724** (hover **#BF211E**) for buttons, active tabs and accents, white, and the **Poppins** typeface (bundled with the app, so no external requests). Green is kept only for "completed / passed". The rest of the VA Training Academy keeps its own navy/mint design. The theme is the `.theme-lava` class in `src/index.css`; the logo is `src/assets/lava/lava-logo-white.png`.
+**Branding:** the LAVA portal and the LAVA admin screens use LAVA Automation's branding from lavaautomation.com: the official white logo on charcoal **#22212A**, brand red **#E52724** (hover **#BF211E**) for buttons, active tabs and accents, white, and the **Poppins** typeface (bundled with the app, so no external requests). Green is kept only for "completed / passed". The same red/charcoal/white palette and Poppins now apply to the whole app (member portal and admin console): the color tokens in `src/index.css` map the app's `navy` scale to LAVA charcoal, and primary buttons, progress bars, the sidebar's active-item marker and accents use `lava` red. The logo is `src/assets/lava/lava-logo-white.png`.
 
 The member dashboard offers two paths:
 

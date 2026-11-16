@@ -56,7 +56,7 @@ function SidebarContent({ sections, subtitle, footer, onNavigate }) {
       <nav className="flex-1 space-y-6 overflow-y-auto px-3 py-4" aria-label="Main">
         {sections.map((section) => (
           <div key={section.label}>
-            <p className="mb-2 px-3 text-[11px] font-semibold uppercase tracking-wider text-navy-300">{section.label}</p>
+            <p className="mb-2 px-3 text-[11px] font-semibold uppercase tracking-[0.14em] text-navy-400">{section.label}</p>
             <ul className="space-y-0.5">
               {section.items.map((item) => {
                 if (item.action === 'logout') return <li key={item.label}><ActionItem item={item} onNavigate={onNavigate} /></li>
@@ -68,11 +68,12 @@ function SidebarContent({ sections, subtitle, footer, onNavigate }) {
                       to={item.to}
                       onClick={onNavigate}
                       aria-current={active ? 'page' : undefined}
-                      className={`group flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
-                        active ? 'bg-white/10 text-white' : 'text-navy-200 hover:bg-white/5 hover:text-white'
+                      className={`group relative flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+                        active ? 'bg-white/[0.08] text-white' : 'text-navy-200 hover:bg-white/5 hover:text-white'
                       }`}
                     >
-                      <Icon className={`h-[18px] w-[18px] ${active ? 'text-mint-400' : 'text-navy-300 group-hover:text-navy-100'}`} />
+                      {active && <span className="absolute inset-y-1.5 left-0 w-1 rounded-r-full bg-lava-500" aria-hidden="true" />}
+                      <Icon className={`h-[18px] w-[18px] ${active ? 'text-lava-400' : 'text-navy-300 group-hover:text-white'}`} />
                       {item.label}
                     </NavLink>
                   </li>
@@ -90,7 +91,7 @@ function SidebarContent({ sections, subtitle, footer, onNavigate }) {
 export default function Sidebar({ mobileOpen, onClose, ...contentProps }) {
   return (
     <>
-      <aside className="fixed inset-y-0 left-0 z-30 hidden w-64 bg-navy-900 lg:block">
+      <aside className="fixed inset-y-0 left-0 z-30 hidden w-64 border-t-[3px] border-lava-500 bg-navy-900 lg:block">
         <SidebarContent {...contentProps} />
       </aside>
 
@@ -101,7 +102,7 @@ export default function Sidebar({ mobileOpen, onClose, ...contentProps }) {
           onClick={onClose}
         />
         <aside
-          className={`absolute inset-y-0 left-0 w-72 max-w-[85%] bg-navy-900 shadow-xl transition-transform duration-200 ${mobileOpen ? 'translate-x-0' : '-translate-x-full'}`}
+          className={`absolute inset-y-0 left-0 w-72 max-w-[85%] border-t-[3px] border-lava-500 bg-navy-900 shadow-xl transition-transform duration-200 ${mobileOpen ? 'translate-x-0' : '-translate-x-full'}`}
           role="dialog"
           aria-modal="true"
           aria-label="Navigation"

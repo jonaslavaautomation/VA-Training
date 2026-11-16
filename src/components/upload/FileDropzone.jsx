@@ -17,7 +17,7 @@ export default function FileDropzone({ accept, file, onFile, onClear, hint, erro
     const Icon = isVideo ? PlayCircle : FileText
     return (
       <div className={`flex items-center gap-3 rounded-xl border p-3 ${error ? 'border-red-300 bg-red-50/40' : 'border-slate-200 bg-white'}`}>
-        <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-lg ${isVideo ? 'bg-navy-50 text-navy-700' : 'bg-mint-50 text-mint-700'}`}>
+        <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-lg ${isVideo ? 'bg-navy-50 text-navy-700' : 'bg-lava-50 text-lava-600'}`}>
           <Icon className="h-5 w-5" />
         </div>
         <div className="min-w-0 flex-1">
@@ -39,11 +39,11 @@ export default function FileDropzone({ accept, file, onFile, onClear, hint, erro
       onDragLeave={() => setDragging(false)}
       onDrop={(e) => { e.preventDefault(); setDragging(false); pick(e.dataTransfer.files) }}
       className={`flex flex-col items-center justify-center rounded-xl border-2 border-dashed px-6 py-10 text-center transition ${
-        dragging ? 'border-mint-400 bg-mint-50/60' : error ? 'border-red-300 bg-red-50/30' : 'border-slate-200 bg-slate-50/50'
+        dragging ? 'border-lava-400 bg-lava-50/60' : error ? 'border-red-300 bg-red-50/30' : 'border-slate-200 bg-slate-50/50'
       }`}
       data-testid="dropzone"
     >
-      <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-white text-mint-600 shadow-sm ring-1 ring-slate-200">
+      <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-white text-lava-500 shadow-sm ring-1 ring-slate-200">
         <UploadCloud className="h-6 w-6" />
       </div>
       <p className="text-sm font-medium text-navy-900">Drag and drop your file here</p>

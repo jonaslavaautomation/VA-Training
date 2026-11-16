@@ -12,7 +12,7 @@ export default function SectionHeader({ title, description, to, linkLabel = 'Vie
         {description && <p className="text-sm text-slate-500">{description}</p>}
       </div>
       {to && (
-        <Link to={to} className="inline-flex min-h-6 shrink-0 items-center gap-1 text-sm font-medium text-navy-700 hover:text-navy-900">
+        <Link to={to} className="inline-flex min-h-6 shrink-0 items-center gap-1 text-sm font-medium text-lava-600 hover:text-lava-700">
           {linkLabel} <ArrowRight className="h-3.5 w-3.5" />
         </Link>
       )}

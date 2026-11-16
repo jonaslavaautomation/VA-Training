@@ -66,7 +66,7 @@ function PathCard({ to, icon: Icon, eyebrow, title, description, action, accent,
 
 function QuickLink({ to, icon: Icon, title, detail, tint }) {
   return (
-    <Link to={to} className="group flex items-center gap-3 rounded-2xl bg-white p-4 shadow-sm ring-1 ring-slate-200/70 transition hover:-translate-y-0.5 hover:shadow-md">
+    <Link to={to} className="group flex items-center gap-3 rounded-2xl bg-white p-4 shadow-sm ring-1 ring-slate-200/70 transition hover:-translate-y-0.5 hover:shadow-md hover:ring-lava-200">
       <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${tint}`}>
         <Icon className="h-5 w-5" />
       </div>
@@ -74,7 +74,7 @@ function QuickLink({ to, icon: Icon, title, detail, tint }) {
         <p className="text-sm font-semibold text-navy-900">{title}</p>
         <p className="truncate text-xs text-slate-500">{detail}</p>
       </div>
-      <ArrowRight className="h-4 w-4 text-slate-300 transition group-hover:translate-x-0.5 group-hover:text-navy-700" />
+      <ArrowRight className="h-4 w-4 text-slate-300 transition group-hover:translate-x-0.5 group-hover:text-lava-500" />
     </Link>
   )
 }
@@ -109,10 +109,12 @@ export default function MemberDashboardPage() {
     <div className="space-y-8">
       {/* Welcome + search */}
       <section className="relative overflow-hidden rounded-2xl bg-navy-900 p-6 shadow-sm sm:p-8">
-        <div className="pointer-events-none absolute -right-16 -top-16 h-64 w-64 rounded-full bg-mint-400/15 blur-2xl" />
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-1 bg-lava-500" />
+        <div className="pointer-events-none absolute -right-16 -top-16 h-72 w-72 rounded-full bg-lava-500/20 blur-3xl" />
+        <div className="pointer-events-none absolute -bottom-24 left-1/4 h-56 w-56 rounded-full bg-lava-500/10 blur-3xl" />
         <div className="relative grid grid-cols-1 gap-6 lg:grid-cols-[1fr_auto] lg:items-end">
           <div className="min-w-0">
-            <p className="text-sm font-medium text-mint-300">{greeting()},</p>
+            <p className="text-sm font-medium text-lava-400">{greeting()},</p>
             <h1 className="mt-1 break-words text-2xl font-semibold tracking-tight text-white sm:text-3xl">Welcome back, {firstName}</h1>
             <div className="mt-2 flex min-w-0 flex-wrap items-center gap-2 text-sm text-navy-200">
               <span className="min-w-0 max-w-full truncate">{user?.email}</span>
@@ -179,15 +181,15 @@ export default function MemberDashboardPage() {
       {/* Stats — every number comes from the database */}
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-4" data-testid="dashboard-stats">
         <StatCard label="Available resources" value={total} icon={Library} tint="navy" loading={loading} hint="Published videos and PDFs" />
-        <StatCard label="Started" value={progress?.started} icon={PlayCircle} tint="sky" loading={loading} hint={progress ? `${progress.inProgress.length} in progress` : undefined} />
+        <StatCard label="Started" value={progress?.started} icon={PlayCircle} tint="red" loading={loading} hint={progress ? `${progress.inProgress.length} in progress` : undefined} />
         <StatCard label="Completed" value={completedCount} icon={CheckCircle2} tint="mint" loading={loading} hint={total ? `${completedPct}% of the library` : undefined} />
       </div>
 
       {/* Quick access */}
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
         <QuickLink to="/library" icon={Library} title="Training Library" detail={loading ? 'Loading…' : `${total} resource${total === 1 ? '' : 's'}`} tint="bg-navy-50 text-navy-700" />
-        <QuickLink to="/my-learning" icon={GraduationCap} title="My Learning" detail={loading ? 'Loading…' : `${progress?.inProgress.length ?? 0} in progress · ${completedCount} completed`} tint="bg-sky-50 text-sky-700" />
-        <QuickLink to="/favorites" icon={Heart} title="Favorites" detail={loading ? 'Loading…' : `${data?.favorites.length ?? 0} saved`} tint="bg-rose-50 text-rose-600" />
+        <QuickLink to="/my-learning" icon={GraduationCap} title="My Learning" detail={loading ? 'Loading…' : `${progress?.inProgress.length ?? 0} in progress · ${completedCount} completed`} tint="bg-lava-50 text-lava-600" />
+        <QuickLink to="/favorites" icon={Heart} title="Favorites" detail={loading ? 'Loading…' : `${data?.favorites.length ?? 0} saved`} tint="bg-lava-50 text-lava-600" />
       </div>
 
       {noMaterials ? (
@@ -223,7 +225,7 @@ export default function MemberDashboardPage() {
                 to="/library"
                 linkLabel="Browse all"
               >
-                <Sparkles className="h-4 w-4 text-mint-500" />
+                <Sparkles className="h-4 w-4 text-lava-500" />
               </SectionHeader>
               <ResourceGrid resources={rec.items} loading={loading} skeletons={3} onToggleFavorite={toggle} />
             </section>

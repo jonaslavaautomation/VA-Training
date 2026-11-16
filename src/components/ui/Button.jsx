@@ -4,10 +4,11 @@ import Spinner from './Spinner'
 const variants = {
   // Themed areas (e.g. the LAVA portal) can recolor primary buttons with --btn-primary / --btn-primary-hover.
   primary: 'bg-[var(--btn-primary,var(--color-navy-900))] text-white hover:bg-[var(--btn-primary-hover,var(--color-navy-800))] disabled:opacity-60',
-  accent: 'bg-mint-400 text-navy-900 hover:bg-mint-300 disabled:bg-mint-400/60',
-  secondary: 'bg-white text-navy-900 ring-1 ring-inset ring-slate-200 hover:bg-slate-50',
+  accent: 'bg-navy-900 text-white hover:bg-navy-800 disabled:opacity-60',
+  secondary: 'bg-white text-navy-900 ring-1 ring-inset ring-slate-200 hover:bg-slate-50 hover:ring-slate-300',
   ghost: 'text-slate-600 hover:bg-slate-100 hover:text-navy-900',
   danger: 'bg-red-600 text-white hover:bg-red-700 disabled:bg-red-600/60',
+  onDark: 'bg-white/10 text-white ring-1 ring-inset ring-white/15 hover:bg-white/15',
 }
 const sizes = {
   sm: 'h-8 px-3 text-sm gap-1.5',

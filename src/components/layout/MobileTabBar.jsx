@@ -18,9 +18,10 @@ export default function MobileTabBar({ items }) {
               <NavLink
                 to={item.to}
                 aria-current={active ? 'page' : undefined}
-                className={`flex flex-col items-center gap-0.5 py-2 text-[11px] font-medium ${active ? 'text-navy-900' : 'text-slate-500 hover:text-navy-900'}`}
+                className={`relative flex flex-col items-center gap-0.5 py-2 text-[11px] font-medium ${active ? 'text-lava-600' : 'text-slate-500 hover:text-navy-900'}`}
               >
-                <Icon className={`h-5 w-5 ${active ? 'text-mint-500' : ''}`} />
+                {active && <span className="absolute inset-x-6 top-0 h-0.5 rounded-b-full bg-lava-500" aria-hidden="true" />}
+                <Icon className={`h-5 w-5 ${active ? 'text-lava-500' : ''}`} />
                 {item.label}
               </NavLink>
             </li>

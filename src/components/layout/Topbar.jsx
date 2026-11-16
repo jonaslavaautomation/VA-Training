@@ -10,7 +10,7 @@ export default function Topbar({ onMenuClick, searchPath, searchPlaceholder }) {
   const currentQ = new URLSearchParams(location.search).get('q') ?? ''
 
   return (
-    <header className="sticky top-0 z-20 flex h-16 items-center gap-3 border-b border-slate-200 bg-white/85 px-4 backdrop-blur sm:px-6">
+    <header className="sticky top-0 z-20 flex h-16 items-center gap-3 border-b border-t-[3px] border-b-slate-200 border-t-lava-500 bg-white/90 px-4 backdrop-blur sm:px-6 lg:border-t-0">
       <button onClick={onMenuClick} className="-ml-1 rounded-lg p-2 text-slate-600 hover:bg-slate-100 lg:hidden" aria-label="Open navigation">
         <Menu className="h-5 w-5" />
       </button>

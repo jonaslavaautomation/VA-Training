@@ -120,7 +120,7 @@ export default function PdfViewer({ getUrl, title, onDownload, downloading, onOp
       <div ref={scrollRef} className="relative h-[70dvh] min-h-[360px] overflow-auto p-4" tabIndex={0} aria-label={`Document: ${title}`}>
         {loading && (
           <div className="absolute inset-0 flex flex-col items-center justify-center gap-3" role="status">
-            <Spinner className="h-8 w-8 text-mint-500" />
+            <Spinner className="h-8 w-8 text-lava-500" />
             <p className="text-sm text-slate-500">Opening document…</p>
           </div>
         )}

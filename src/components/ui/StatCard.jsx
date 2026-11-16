@@ -5,12 +5,14 @@ const tints = {
   navy: 'bg-navy-50 text-navy-700',
   mint: 'bg-mint-50 text-mint-700',
   sky: 'bg-sky-50 text-sky-700',
+  red: 'bg-lava-50 text-lava-600',
   amber: 'bg-amber-50 text-amber-700',
 }
 
 export default function StatCard({ label, value, icon: Icon, tint = 'navy', hint, loading }) {
   return (
-    <Card className="p-4 sm:p-5">
+    <Card className="group relative overflow-hidden p-4 transition hover:-translate-y-0.5 hover:shadow-md sm:p-5">
+      <span className="pointer-events-none absolute inset-x-0 top-0 h-0.5 bg-lava-500 opacity-0 transition group-hover:opacity-100" />
       <div className="flex items-start justify-between">
         <p className="text-sm font-medium text-slate-500">{label}</p>
         {Icon && (

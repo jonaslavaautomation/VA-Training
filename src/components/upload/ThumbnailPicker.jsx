@@ -89,7 +89,7 @@ export default function ThumbnailPicker({ videoFile, value, onChange, onMeta, di
             <img src={preview} alt="Selected thumbnail" className="h-full w-full object-cover" />
           ) : (
             <div className="flex h-full items-center justify-center text-xs text-slate-400">
-              {state === 'loading' ? <Spinner className="h-5 w-5 text-mint-500" /> : 'No thumbnail'}
+              {state === 'loading' ? <Spinner className="h-5 w-5 text-lava-500" /> : 'No thumbnail'}
             </div>
           )}
         </div>

@@ -157,7 +157,7 @@ export default function MemberDetailsPage() {
       </Card>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <StatCard label="In progress" value={started.length} icon={Clock} tint="sky" />
+        <StatCard label="In progress" value={started.length} icon={Clock} tint="red" />
         <StatCard label="Completed" value={completed.length} icon={CheckCircle2} tint="mint" />
         <StatCard label="Favorites" value={favorites.length} icon={Heart} tint="navy" />
       </div>

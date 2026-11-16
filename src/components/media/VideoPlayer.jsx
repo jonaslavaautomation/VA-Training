@@ -268,7 +268,7 @@ export default function VideoPlayer({ getUrl, poster, title, knownDuration, star
             onChange={(e) => seek(Number(e.target.value))}
             aria-label="Seek"
             aria-valuetext={`${clock(current)} of ${clock(duration)}`}
-            className="h-1.5 w-full cursor-pointer accent-mint-400"
+            className="h-1.5 w-full cursor-pointer accent-lava-500"
             style={{ background: `linear-gradient(to right, #5ec29a ${pct}%, rgba(255,255,255,.3) ${pct}%)` }}
           />
           <div className="mt-1.5 flex items-center gap-2">
@@ -287,7 +287,7 @@ export default function VideoPlayer({ getUrl, poster, title, knownDuration, star
                 value={muted ? 0 : volume}
                 onChange={(e) => changeVolume(Number(e.target.value))}
                 aria-label="Volume"
-                className="hidden w-20 cursor-pointer accent-mint-400 sm:block"
+                className="hidden w-20 cursor-pointer accent-lava-500 sm:block"
               />
             </div>
             <span className="ml-1 text-xs tabular-nums text-white/90" aria-live="off">

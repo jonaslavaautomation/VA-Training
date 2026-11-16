@@ -34,7 +34,7 @@ export default function AdminLavaOverviewPage() {
         <StatCard label="Applicants" value={data?.applicants} icon={Users} tint="navy" loading={loading} hint="Answered the agreement" />
         <StatCard label="Agreed to all terms" value={data?.agreed} icon={UserCheck} tint="mint" loading={loading} hint="Preparation unlocked" />
         <StatCard label="Pending requests" value={data?.pendingRequests} icon={MonitorPlay} tint="amber" loading={loading} hint={data ? `${data.approved} approved` : undefined} />
-        <StatCard label="Open positions" value={data?.openPositions} icon={Briefcase} tint="sky" loading={loading} hint="Shown as hiring" />
+        <StatCard label="Open positions" value={data?.openPositions} icon={Briefcase} tint="red" loading={loading} hint="Shown as hiring" />
       </div>
       <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
         {links.map(({ to, icon: Icon, title, detail }) => (

@@ -40,7 +40,7 @@ export default function MyLearningPage() {
       )}
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <StatCard label="In progress" value={data?.inProgress.length} icon={Clock} tint="sky" loading={loading} />
+        <StatCard label="In progress" value={data?.inProgress.length} icon={Clock} tint="red" loading={loading} />
         <StatCard label="Completed" value={data?.completed.length} icon={CheckCircle2} tint="mint" loading={loading} />
         <StatCard label="Overall progress" value={`${pct}%`} icon={BookOpen} tint="navy" loading={loading} hint={data && `${data.completed.length} of ${data.totalPublished} resources`} />
       </div>

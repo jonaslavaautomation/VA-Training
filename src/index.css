@@ -1,22 +1,22 @@
 @import "tailwindcss";
 
 @theme {
-  --font-sans: "Inter Variable", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Poppins", ui-sans-serif, system-ui, sans-serif;
 
-  /* Navy — primary brand */
-  --color-navy-50: #f0f4fa;
-  --color-navy-100: #dde6f3;
-  --color-navy-200: #bccde6;
-  --color-navy-300: #8eaad3;
-  --color-navy-400: #5b80bb;
-  --color-navy-500: #3a61a1;
-  --color-navy-600: #2a4b85;
-  --color-navy-700: #223c6b;
-  --color-navy-800: #1a2f55;
-  --color-navy-900: #0f2747;
-  --color-navy-950: #0a1a31;
+  /* "Navy" scale = LAVA Automation charcoal (#22212A) — primary dark brand color */
+  --color-navy-50: #f5f5f7;
+  --color-navy-100: #e9e9ee;
+  --color-navy-200: #d3d2db;
+  --color-navy-300: #aaa9b5;
+  --color-navy-400: #7b7a88;
+  --color-navy-500: #5d5c69;
+  --color-navy-600: #46454f;
+  --color-navy-700: #37363f;
+  --color-navy-800: #2c2b34;
+  --color-navy-900: #22212a;
+  --color-navy-950: #17161d;
 
-  /* Soft green — accent / success */
+  /* Green — success / completed only (brand accents use LAVA red) */
   --color-mint-50: #effaf5;
   --color-mint-100: #d8f3e6;
   --color-mint-200: #b3e6cf;
@@ -40,32 +40,20 @@
 }
 
 /*
- * LAVA Automation theme — applied to the LAVA applicant portal and LAVA
- * admin screens only. Re-maps the app's navy scale to LAVA's charcoal
- * (#22212A) and makes primary buttons, progress bars and focus rings LAVA
- * red, with Poppins as the typeface. Green stays for "completed / passed".
+ * LAVA Automation branding (red #E52724, charcoal #22212A, white, Poppins)
+ * applies app-wide: primary buttons and progress bars are LAVA red.
+ * `.theme-lava` is kept as a hook for LAVA-portal-only styling.
  */
-.theme-lava {
-  --color-navy-50: #f5f5f7;
-  --color-navy-100: #e9e9ee;
-  --color-navy-200: #d3d2db;
-  --color-navy-300: #aaa9b5;
-  --color-navy-400: #7b7a88;
-  --color-navy-500: #5d5c69;
-  --color-navy-600: #46454f;
-  --color-navy-700: #37363f;
-  --color-navy-800: #2c2b34;
-  --color-navy-900: #22212a;
-  --color-navy-950: #17161d;
+:root {
   --btn-primary: var(--color-lava-500);
   --btn-primary-hover: var(--color-lava-600);
   --progress-fill: var(--color-lava-500);
-  font-family: "Poppins", ui-sans-serif, system-ui, sans-serif;
 }
-.theme-lava :focus-visible { outline-color: var(--color-lava-500); }
+.theme-lava { font-family: "Poppins", ui-sans-serif, system-ui, sans-serif; }
 
 @layer base {
   html { -webkit-font-smoothing: antialiased; }
   body { @apply bg-slate-50 text-slate-800; }
-  :focus-visible { @apply outline-2 outline-offset-2 outline-mint-500; }
+  :focus-visible { @apply outline-2 outline-offset-2 outline-lava-500; }
+  ::selection { @apply bg-lava-500/20; }
 }

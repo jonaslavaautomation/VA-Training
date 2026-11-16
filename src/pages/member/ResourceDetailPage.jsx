@@ -161,7 +161,7 @@ export default function ResourceDetailPage() {
             <div className="relative overflow-hidden rounded-2xl shadow-sm">
               <ResourceThumbnail resource={resource} showIcon={false} />
               <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-navy-950/60 p-4 text-center text-white backdrop-blur-[2px]">
-                <Lock className="h-6 w-6 text-mint-300" />
+                <Lock className="h-6 w-6 text-lava-400" />
                 <p className="text-sm font-medium">{isPreview ? 'Files open once Supabase is connected' : 'No file attached yet'}</p>
               </div>
             </div>

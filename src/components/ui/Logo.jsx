@@ -3,7 +3,7 @@ import { GraduationCap } from 'lucide-react'
 export default function Logo({ inverted = false, compact = false, subtitle = 'Learning Portal' }) {
   return (
     <div className="flex items-center gap-2.5">
-      <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-mint-400 text-navy-900 shadow-sm">
+      <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-lava-500 text-white shadow-sm shadow-lava-500/30">
         <GraduationCap className="h-5 w-5" />
       </div>
       {!compact && (

@@ -10,7 +10,7 @@ export default function ResourceListItem({ resource, showProgress = false }) {
   return (
     <li>
       <Link to={`/library/${resource.id}`} className="flex items-center gap-3 rounded-xl p-2.5 transition hover:bg-slate-50">
-        <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${isVideo ? 'bg-navy-50 text-navy-700' : 'bg-mint-50 text-mint-700'}`}>
+        <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${isVideo ? 'bg-navy-50 text-navy-700' : 'bg-lava-50 text-lava-600'}`}>
           <Icon className="h-5 w-5" />
         </div>
         <div className="min-w-0 flex-1">

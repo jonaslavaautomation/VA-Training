@@ -53,7 +53,7 @@ export default function UserMenu() {
             <p className="truncate text-xs text-slate-500">{user?.email}</p>
             <span
               className={`mt-2 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium ${
-                isAdmin ? 'bg-navy-100 text-navy-800' : 'bg-mint-50 text-mint-700'
+                isAdmin ? 'bg-navy-100 text-navy-800' : 'bg-lava-50 text-lava-700'
               }`}
             >
               {isAdmin && <ShieldCheck className="h-3 w-3" />}

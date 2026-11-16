@@ -33,7 +33,7 @@ export default function DashboardShell({ navigation, subtitle, sidebarFooter, se
           <Suspense
             fallback={
               <div className="flex min-h-[40dvh] items-center justify-center" role="status" aria-label="Loading page">
-                <Spinner className="h-7 w-7 text-mint-500" />
+                <Spinner className="h-7 w-7 text-lava-500" />
               </div>
             }
           >
