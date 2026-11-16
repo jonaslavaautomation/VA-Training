@@ -1,6 +1,6 @@
 import { useCallback } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { ArrowRight, BookOpen, CheckCircle2, Compass, GraduationCap, Heart, Library, PlayCircle, Sparkles } from 'lucide-react'
+import { ArrowRight, BookOpen, Briefcase, CheckCircle2, Compass, GraduationCap, Heart, Library, PlayCircle, Sparkles } from 'lucide-react'
 import Card from '@/components/ui/Card'
 import SearchBar from '@/components/ui/SearchBar'
 import SectionHeader from '@/components/ui/SectionHeader'
@@ -41,6 +41,25 @@ async function loadDashboard() {
     listLiveAnnouncements({ limit: 3 }).catch(() => []), // announcements never block the dashboard
   ])
   return { categories, catalog, progress, favorites, announcements }
+}
+
+/** The two career paths at the top of the dashboard (Phase 7A: only LAVA is built). */
+function PathCard({ to, icon: Icon, eyebrow, title, description, action, accent, soon }) {
+  return (
+    <Link to={to} data-testid="path-card" className={`group relative flex flex-col overflow-hidden rounded-2xl p-6 shadow-sm ring-1 transition hover:-translate-y-0.5 hover:shadow-md ${accent ? 'bg-white ring-mint-300' : 'bg-white ring-slate-200/70'}`}>
+      {accent && <div className="pointer-events-none absolute -right-12 -top-12 h-40 w-40 rounded-full bg-mint-400/15 blur-2xl" />}
+      <div className="flex items-start justify-between gap-3">
+        <div className={`flex h-12 w-12 items-center justify-center rounded-2xl ${accent ? 'bg-navy-900 text-mint-300' : 'bg-slate-100 text-slate-600'}`}><Icon className="h-6 w-6" /></div>
+        {soon ? <Badge tone="gray">Coming soon</Badge> : <Badge tone="mint">Now open</Badge>}
+      </div>
+      <p className="mt-4 text-xs font-semibold uppercase tracking-wider text-slate-400">{eyebrow}</p>
+      <h2 className="mt-1 text-lg font-semibold text-navy-900">{title}</h2>
+      <p className="mt-2 flex-1 text-sm leading-6 text-slate-500">{description}</p>
+      <span className={`mt-5 inline-flex h-10 items-center justify-center gap-2 self-start rounded-lg px-4 text-sm font-medium transition ${accent ? 'bg-navy-900 text-white group-hover:bg-navy-800' : 'bg-white text-navy-900 ring-1 ring-inset ring-slate-200 group-hover:bg-slate-50'}`}>
+        {action} <ArrowRight className="h-4 w-4" />
+      </span>
+    </Link>
+  )
 }
 
 function QuickLink({ to, icon: Icon, title, detail, tint }) {
@@ -109,6 +128,31 @@ export default function MemberDashboardPage() {
               </>
             )}
           </div>
+        </div>
+      </section>
+
+      {/* Career paths */}
+      <section aria-label="Choose your path">
+        <SectionHeader title="Where would you like to go next?" description="Choose a path. You can always come back to the main dashboard." />
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+          <PathCard
+            to="/lava-portal"
+            icon={Briefcase}
+            eyebrow="Option 1"
+            title="I Want to Apply to LAVA Automation"
+            description="Interested in becoming part of LAVA Automation? Discover our company, explore our career opportunities, and prepare yourself through our specialized training program."
+            action="Explore LAVA Opportunities"
+            accent
+          />
+          <PathCard
+            to="/explore-niches"
+            icon={Compass}
+            eyebrow="Option 2"
+            title="I Want to Explore Different Niches"
+            description="Discover different Virtual Assistant careers, explore various industries, and develop new skills."
+            action="Explore VA Niches"
+            soon
+          />
         </div>
       </section>
 

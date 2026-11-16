@@ -22,6 +22,8 @@ New members create their own account on the sign-in page, or an administrator cr
 - Training Library with search, category and type filters, sorting, and "Load more".
 - Watch videos (resumes where they stopped); read PDFs inside the portal or download them.
 - My Learning (in progress and completed), Favorites, and a Profile page with password change.
+- **Two career paths on the dashboard:** *Apply to LAVA Automation* (built) and *Explore Different VA Niches* (placeholder for a later phase).
+- **LAVA Automation applicant portal** (`/lava-portal`): company introduction, career opportunities, the 45-day onsite → work-from-home notice, a three-question applicant agreement, six preparation courses with lessons and quizzes, and simulator activities that open only after an administrator approves access. See [docs/LAVA_PORTAL.md](docs/LAVA_PORTAL.md).
 
 **Administrators**
 - Dashboard with live statistics and quick actions.
@@ -31,6 +33,7 @@ New members create their own account on the sign-in page, or an administrator cr
 - **Categories:** create, rename, hide, safe delete.
 - **Announcements:** draft, publish, schedule, archive.
 - **Activity Logs:** a record of who did what, including every sign-in (recorded by the server).
+- **LAVA Applicant Management** (`/admin/lava`): edit company information (drafts until published), manage positions and salaries, courses and lessons (attach library videos/PDFs), assessments and questions, view applicants' agreements and progress, and approve or reject simulator access with a note.
 
 **Security:**
 - Every rule is enforced by the database (Row Level Security), not just by hiding buttons.
@@ -70,9 +73,11 @@ New members create their own account on the sign-in page, or an administrator cr
 | `npm run dev` | Run the site locally with live reload |
 | `npm run build` | Build the production version into `dist/` |
 | `npm run preview` | Serve that production build locally |
-| `npm run test:db` | Apply all migrations to a temporary database and run 192 security checks (no Supabase or internet needed) |
+| `npm run test:db` | Apply all migrations to a temporary database and run the security checks: 194 core + 79 LAVA portal + 15 setup-script (no Supabase or internet needed) |
 | `npm run test:e2e` | Production acceptance test in Chrome against a simulated backend (needs Google Chrome) |
 | `npm run test:responsive` | Check every page at phone/tablet/desktop widths (needs Google Chrome) |
+| `npm run test:lava` | LAVA applicant journey (member + admin) in Chrome; LAVA data runs the real migrations in a temporary database |
+| `npm run build:lava-seed` | Rebuild the LAVA starter-content migration from `supabase/content/lava/` |
 
 ---
 
@@ -117,6 +122,8 @@ Full steps: **[DEPLOYMENT_GUIDE.md §2–6](DEPLOYMENT_GUIDE.md)**. Details: [su
 | `20261119100000_self_signup.sql` | Create account: new-account setting |
 | `20261120100000_direct_login_alert_email.sql` | alert emails (superseded by the next one) |
 | `20261121100000_remove_alerts_admin_status.sql` | no alert emails; admin activate/deactivate/edit functions |
+| `20261122100000_lava_portal.sql` | LAVA applicant portal: 10 tables, RLS, grading + approval functions |
+| `20261122100100_lava_seed_content.sql` | LAVA starter content: 6 courses, quizzes, 3 simulator activities (generated) |
 
 3. **Storage buckets** are created by the migrations, all **private**:
 
@@ -130,6 +137,7 @@ Full steps: **[DEPLOYMENT_GUIDE.md §2–6](DEPLOYMENT_GUIDE.md)**. Details: [su
    The project-wide limit (Storage → Settings) also applies. **Free plan: 50 MB per file.**
 4. **Edge Function (optional):** `npx supabase functions deploy admin-members`, after setting the secrets above. Only needed for **Add member** by invitation, access emails and email changes.
 5. **Create account + member controls:** one copy-paste SQL script, no terminal. See [DEPLOYMENT_GUIDE.md §4b](DEPLOYMENT_GUIDE.md).
+   **LAVA applicant portal:** a second copy-paste script, `supabase/setup/2_lava_portal.sql`. See [DEPLOYMENT_GUIDE.md §4c](DEPLOYMENT_GUIDE.md).
 6. **Auth settings:**
    - turn **on** "Allow new users to sign up" (for the Create account page) and turn **off** "Confirm email" (new members get in right away);
    - password minimum 8 with letters and digits;
@@ -222,19 +230,20 @@ va-training-academy/
 ├── DEPLOYMENT_GUIDE.md · PRODUCTION_CHECKLIST.md · SECURITY_AUDIT.md · TEST_RESULTS.md
 ├── docs/SECURITY_CHECKLIST.md # Manual + API security tests
 ├── supabase/
-│   ├── migrations/            # 9 database migrations (apply in order)
+│   ├── migrations/            # 12 database migrations (apply in order)
+│   ├── content/lava/          # LAVA course content (JSON) + seed builder (npm run build:lava-seed)
 │   ├── functions/admin-members/   # Optional server function: add members by invitation, access emails
-│   ├── setup/                 # Copy-paste SQL: create_admins, 1_enable_create_account
-│   ├── tests/rls.test.mjs     # npm run test:db
+│   ├── setup/                 # Copy-paste SQL: create_admins, 1_enable_create_account, 2_lava_portal
+│   ├── tests/                 # npm run test:db (rls, lava, setup scripts)
 │   └── README.md              # Database, storage, email, limits
-├── tests/e2e/                 # npm run test:e2e / test:responsive
+├── tests/e2e/                 # npm run test:e2e / test:responsive / test:lava
 └── src/
     ├── lib/                   # Supabase client, errors, validation, media, PDF helpers
     ├── services/              # All data access (Supabase queries, uploads, signed links)
     ├── context/ · hooks/      # Sign-in state, notifications
     ├── routes/                # Route table + guards (member / admin)
     ├── components/            # UI building blocks, layouts, admin & media components
-    ├── pages/                 # auth/, member/, admin/
+    ├── pages/                 # auth/, member/, admin/ (+ admin/lava/), lava/
     └── mocks/                 # Sample data for local preview only
 ```
 
@@ -249,4 +258,5 @@ va-training-academy/
 | 3 | Uploads, private storage, video player, PDF viewer | ✅ |
 | 4 | Member learning experience | ✅ |
 | 5 | Full admin management | ✅ |
-| 6 | Testing, security audit, performance, responsive, deployment preparation | ✅ Done — awaiting approval to deploy |
+| 6 | Testing, security audit, performance, responsive, deployment preparation | ✅ |
+| 7A | LAVA Automation applicant portal (agreement, preparation courses, assessments, simulator approval) | ✅ Built and tested; awaiting your approval |

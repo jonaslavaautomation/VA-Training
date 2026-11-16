@@ -1,6 +1,6 @@
 # Test Results — VA Training Academy
 
-**Date:** 15 November 2026 (Phase 6). **Verdict for the code:** all automated tests pass. **Live environment:** not yet tested (see §5).
+**Date:** 16 November 2026 (Phase 7A, LAVA applicant portal; Phase 6 baseline re-run). **Verdict for the code:** all automated tests pass. **Live environment:** not yet tested (see §5).
 
 ## How to read this document
 
@@ -24,7 +24,9 @@ There are three different environments, and a PASS in one doesn't prove the othe
 | Suite | Checks | Result |
 |---|---|---|
 | Database & storage security (`npm run test:db`, part 1) | 194 | **194 PASS** |
-| Copy-paste setup scripts (`npm run test:db`, part 2) | 9 | **9 PASS** |
+| LAVA portal database security (`npm run test:db`, `lava.test.mjs`) | 79 | **79 PASS** |
+| Copy-paste setup scripts incl. `2_lava_portal.sql` (`npm run test:db`, part 3) | 15 | **15 PASS** |
+| **LAVA applicant journey**: member + admin in Chrome, LAVA data on the real migrations (`npm run test:lava`) | 38 | **38 PASS** |
 | Edge Function `admin-members` (Deno, simulated Auth/REST; optional, unchanged this round, not re-run) | 45 | **45 PASS** (earlier run) |
 | Browser: Phase 2 auth & member management | 33 | **33 PASS** |
 | Browser: Phase 3 uploads, storage, player, PDF viewer | 31 | **31 PASS** |
@@ -42,6 +44,23 @@ There are three different environments, and a PASS in one doesn't prove the othe
 The Phase 2–5 suites and the Edge Function tests live outside the repository (they were development harnesses). The production acceptance and responsive tests are included in `tests/e2e/`.
 
 ---
+
+## 1b. Phase 7A: LAVA journey (Task 10)
+
+| # | Journey step | Result |
+|---|---|---|
+| 1–3 | Member logs in, sees both dashboard choices, opens the LAVA portal ("Explore VA Niches" opens the placeholder) | PASS |
+| 4 | Reads the introduction: published sections only, drafts hidden | PASS |
+| 5–6 | Explores positions; salary shown only where the admin entered it ("To be announced" otherwise) | PASS |
+| 7 | 45-day onsite → work-from-home notice shown on About, Careers and Agreement | PASS |
+| 8–10 | Agreement: all 3 required; Yes×3 unlocks; any No blocks (page and API) and is saved with a timestamp | PASS |
+| 11–14 | Completes all 6 courses (54 lessons) and their quizzes through the UI; a failing attempt is graded "not passed" | PASS |
+| 15 | All 6 assessments passed | PASS |
+| 16–18 | Requests simulator access (Pending); can't self-approve (PATCH/RPC refused); admin sees it on the dashboard and request list, approves with a note | PASS |
+| 19 | Approved member completes a simulator activity | PASS |
+| 20 | Unapproved members (pending, rejected, never agreed) blocked in the UI and via the API | PASS |
+| Extra | Admin rejects with a note (member sees it); answer key and others' records hidden; content/positions admin-only; applicant list; lesson editing; deactivated member loses access; 390px phone layout; no console errors | PASS |
+| Live | The same steps on your real Supabase project after running `2_lava_portal.sql` | **NOT TESTED** |
 
 ## 2. Functional test matrix (Phase 6, Task 1)
 

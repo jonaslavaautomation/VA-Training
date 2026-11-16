@@ -4,6 +4,7 @@
 // RLS rules and audit triggers are emulated to match the real migrations.
 import http from 'node:http'
 import { randomUUID } from 'node:crypto'
+import { handleLava } from './fake-lava.mjs'
 
 const now = () => new Date().toISOString()
 export const state = {
@@ -335,6 +336,9 @@ export function start(port) {
       state.objects.set(`${m[1]}/${m[2]}`, { bucket: m[1], name: m[2], data: file.data, type: file.type || 'image/jpeg', createdAt: Date.now() })
       return send(res, 200, { Key: `${m[1]}/${m[2]}`, Id: randomUUID() })
     }
+
+    // ---------------- LAVA portal (real migrations in PGlite, see fake-lava.mjs)
+    if (await handleLava({ req, res, url, path, body, uid, state, send })) return
 
     // ---------------- RPC
     if (path === '/rest/v1/rpc/admin_member_auth_info') {

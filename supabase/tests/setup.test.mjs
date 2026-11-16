@@ -8,6 +8,8 @@ const ROOT = new URL('../..', import.meta.url).pathname
 const MIGRATIONS = readdirSync(`${ROOT}supabase/migrations`).filter((f) => f.endsWith('.sql')).sort()
 const read = (p) => readFileSync(`${ROOT}${p}`, 'utf8')
 const SCRIPT1 = read('supabase/setup/1_enable_create_account.sql')
+const SCRIPT2 = read('supabase/setup/2_lava_portal.sql')
+const UP_TO_SCRIPT1 = MIGRATIONS.findIndex((f) => f.startsWith('20261122')) // migrations covered before the LAVA script
 
 let passed = 0
 let failed = 0
@@ -51,7 +53,7 @@ console.log('\nSTEP 1 — 1_enable_create_account.sql')
   const r2 = await run(db, SCRIPT1)
   r2.rows?.[0]?.result ? ok('safe to run a second time') : bad('second run', r2.error)
   let later = null
-  for (const f of MIGRATIONS.slice(6)) { const r = await run(db, read(`supabase/migrations/${f}`)); if (r.error) later = `${f}: ${r.error}` }
+  for (const f of MIGRATIONS.slice(6, UP_TO_SCRIPT1)) { const r = await run(db, read(`supabase/migrations/${f}`)); if (r.error) later = `${f}: ${r.error}` }
   later ? bad('a later `supabase db push` still works', later) : ok('a later `supabase db push` of the same migrations still works')
   await db.query(`insert into auth.users (email, raw_user_meta_data) values ('newbie@example.com', '{"first_name":"Nia","role":"admin"}')`)
   const [p] = (await db.query(`select role, status from public.profiles where email = 'newbie@example.com'`)).rows
@@ -80,6 +82,31 @@ console.log('\nafter the script — no emails, admin controls work')
   logs === 1 && mails === 0 ? ok('a new member signs in → logged in Activity Logs, no email sent') : bad('sign-in', `logs=${logs} mails=${mails}`)
   const fns = (await db.query(`select proname from pg_proc where pronamespace = 'public'::regnamespace and proname in ('admin_set_member_status', 'admin_update_member') order by 1`)).rows.map((r) => r.proname).join()
   fns === 'admin_set_member_status,admin_update_member' ? ok('admin activate/deactivate + edit functions are installed') : bad('functions', fns)
+}
+
+console.log('\nSTEP 2 — 2_lava_portal.sql')
+{
+  const db = await freshDb(6)
+  await run(db, SCRIPT1)
+  await db.query(`insert into auth.users (email) values ('member@example.com')`)
+  const r1 = await run(db, SCRIPT2)
+  r1.rows?.[0]?.result?.startsWith('LAVA portal ready') ? ok('runs on a project set up with STEP 1') : bad('first run', r1.error ?? JSON.stringify(r1.rows))
+  await db.query(`update public.lava_content set body = 'Edited by admin', status = 'published' where key = 'overview'`)
+  const r2 = await run(db, SCRIPT2)
+  const [c] = (await db.query(`select body from public.lava_content where key = 'overview'`)).rows
+  r2.rows?.[0]?.result && c.body === 'Edited by admin' ? ok('safe to run again; admin edits are kept') : bad('second run', r2.error ?? c.body)
+  const counts = (await db.query(`select (select count(*)::int from public.lava_courses) c, (select count(*)::int from public.lava_assessments) a, (select count(*)::int from public.lava_positions) p`)).rows[0]
+  counts.c === 6 && counts.a === 9 && counts.p === 0 ? ok('6 courses, 9 assessments, no positions (no duplicates after two runs)') : bad('counts', JSON.stringify(counts))
+  let later = null
+  for (const f of MIGRATIONS.slice(UP_TO_SCRIPT1)) { const r = await run(db, read(`supabase/migrations/${f}`)); if (r.error) later = `${f}: ${r.error}` }
+  later ? bad('a later `supabase db push` still works', later) : ok('a later `supabase db push` of the same migrations still works')
+  const [m] = (await db.query(`select count(*)::int n from public.profiles`)).rows
+  m.n === 1 ? ok('existing accounts untouched') : bad('profiles', m.n)
+}
+{
+  const db = await freshDb(0)
+  const r = await run(db, SCRIPT2)
+  r.error?.includes('earlier database setup is missing') ? ok('stops with a clear message if the earlier setup is missing') : bad('missing prerequisite', r.error ?? 'no error')
 }
 
 console.log(`\n${passed} passed, ${failed} failed`)

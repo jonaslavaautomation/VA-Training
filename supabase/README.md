@@ -15,14 +15,17 @@ supabase/
 │   ├── 20261118100000_login_alerts.sql      # Server-side sign-in log
 │   ├── 20261119100000_self_signup.sql       # "Create account": portal_settings.new_account_status
 │   ├── 20261120100000_direct_login_alert_email.sql  # alert emails via Resend (superseded by 010)
-│   └── 20261121100000_remove_alerts_admin_status.sql # no alert emails; admin_set_member_status / admin_update_member
+│   ├── 20261121100000_remove_alerts_admin_status.sql # no alert emails; admin_set_member_status / admin_update_member
+│   ├── 20261122100000_lava_portal.sql       # Phase 7A: LAVA applicant portal tables, RLS, grading + approval functions
+│   └── 20261122100100_lava_seed_content.sql # Phase 7A: generated from content/lava/ (npm run build:lava-seed)
+├── content/lava/                            # course JSON, company drafts + simulator activities (portal.mjs), build-seed.mjs
 ├── functions/
 │   ├── _shared/cors.ts
 │   ├── admin-members/index.ts               # create / edit / activate / deactivate members, send emails
 │   ├── admin-members/deno.json
 │   └── .env.example                         # Edge Function secrets template
-├── setup/                                   # copy-paste SQL: create_admins, 1_enable_create_account
-└── tests/rls.test.mjs                       # `npm run test:db` — 179 security checks + 13 setup-script checks
+├── setup/                                   # copy-paste SQL: create_admins, 1_enable_create_account, 2_lava_portal
+└── tests/                                   # `npm run test:db`: rls.test.mjs (194), lava.test.mjs (79), setup.test.mjs (15); pglite-supabase.mjs helper
 ```
 
 ---
@@ -271,6 +274,15 @@ The upload screen reads the real bucket limits from Supabase, takes the lower of
   - **inactive** creates the account without any email, blocked from signing in until reactivated.
 - `update` accepts `phone` and `role`. An admin can't change their own role, and the last active admin can't be demoted.
 - Every change writes an audit entry with the calling admin as actor. Entries contain only ids, names, emails and changed **field names**, never passwords, tokens or keys.
+
+## 9d. LAVA applicant portal (Phase 7A)
+
+Apply with `npx supabase db push`, or paste `setup/2_lava_portal.sql` into the SQL Editor.
+
+- **New tables (all RLS-enabled, no anon access):** `lava_content`, `lava_positions`, `lava_agreements`, `lava_courses`, `lava_lessons`, `lava_lesson_progress`, `lava_assessments`, `lava_questions`, `lava_attempts`, `lava_simulator_requests`.
+- **Existing tables:** unchanged. `activity_logs` only gets new *allowed* values (LAVA admin actions); nothing is removed.
+- **RLS summary:** members read published content and their own agreement, progress, attempts and request. Lessons unlock only after agreeing to all three conditions. Questions (with answers) are admin-only. Agreements, attempts and access requests can't be written directly (insert/update revoked), only through the SECURITY DEFINER functions. Only admins can approve or reject simulator access, never their own request.
+- Full description: [../docs/LAVA_PORTAL.md](../docs/LAVA_PORTAL.md).
 
 ## 10. Storage & bandwidth limitations (read before uploading lots of video)
 

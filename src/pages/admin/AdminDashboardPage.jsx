@@ -11,15 +11,18 @@ import ActivityFeed from '@/components/admin/ActivityFeed'
 import { useAsync } from '@/hooks/useAsync'
 import { useAuth } from '@/hooks/useAuth'
 import { getAdminStats, getRecentUploads, listRecentAdminActions, listRecentRegistrations } from '@/services/adminService'
+import { getLavaAdminStats } from '@/services/lavaService'
+import { Link } from 'react-router-dom'
 
 async function loadAdminDashboard() {
-  const [stats, uploads, activity, registrations] = await Promise.all([
+  const [stats, uploads, activity, registrations, lava] = await Promise.all([
     getAdminStats(),
     getRecentUploads(6),
     listRecentAdminActions(8),
     listRecentRegistrations(5),
+    getLavaAdminStats().catch(() => null), // LAVA numbers never block the dashboard
   ])
-  return { stats, uploads, activity, registrations }
+  return { stats, uploads, activity, registrations, lava }
 }
 
 export default function AdminDashboardPage() {
@@ -47,6 +50,12 @@ export default function AdminDashboardPage() {
         <Alert type="error">
           Couldn’t load dashboard data.{' '}
           <button onClick={reload} className="font-semibold underline-offset-2 hover:underline">Try again</button>
+        </Alert>
+      )}
+
+      {data?.lava?.pendingRequests > 0 && (
+        <Alert type="info" title={`${data.lava.pendingRequests} LAVA simulator access request${data.lava.pendingRequests === 1 ? '' : 's'} waiting for review`}>
+          <Link to="/admin/lava/requests" className="font-semibold underline-offset-2 hover:underline">Review requests</Link>
         </Alert>
       )}
 

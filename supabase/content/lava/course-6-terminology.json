@@ -1,0 +1,164 @@
+{
+  "slug": "insurance-terminology",
+  "title": "Insurance Terminologies and Abbreviations",
+  "summary": "Learn the most common insurance terms and abbreviations used in property and casualty agencies, each with a simple explanation and a real-world example.",
+  "sort_order": 6,
+  "lessons": [
+    {
+      "title": "Policy Basics",
+      "minutes": 12,
+      "body": "These are the words you will hear in almost every conversation at an insurance agency. Learn them first, because the other lessons build on them. Read each term slowly and try to think of your own example.\n\n### Premium\n- **Full meaning:** The amount of money the policyholder pays the insurance company for coverage.\n- **Simple explanation:** The price of the insurance policy.\n- **Example:** A bakery pays a $1,200 yearly premium for its business owners policy.\n- **How it's used in an agency:** Staff quote premiums, explain payment options, and note premium changes at renewal in the AMS.\n\n### Deductible\n- **Full meaning:** The amount the insured must pay out of pocket on a covered loss before the insurance company pays.\n- **Simple explanation:** The part of a loss you pay yourself first.\n- **Example:** A homeowner with a $1,000 deductible has a $6,000 covered loss. The carrier pays $5,000.\n- **How it's used in an agency:** Deductibles appear on quotes and declarations pages. VAs often confirm the deductible amount when preparing documents or answering basic client questions, following agency guidance.\n\n### Coverage\n- **Full meaning:** The protection a policy provides against specific losses, up to stated limits and subject to its terms.\n- **Simple explanation:** What the insurance will pay for.\n- **Example:** A renters policy includes coverage for the tenant's furniture and clothing.\n- **How it's used in an agency:** Staff review what coverages a client has before issuing certificates or answering questions. Only licensed staff should give coverage advice.\n\n### Liability\n- **Full meaning:** Legal responsibility for injury to other people or damage to their property. Liability insurance pays for these claims, including legal defense, up to the limit.\n- **Simple explanation:** Insurance that protects you when you are responsible for hurting someone or damaging their property.\n- **Example:** A customer slips on a wet floor in a shop. The shop's liability coverage may respond to the injury claim.\n- **How it's used in an agency:** Many certificate requests are about liability coverage, such as general liability and auto liability.\n\n### Limit\n- **Full meaning:** The maximum amount an insurance policy will pay for a covered loss, per occurrence, per person, or in total (aggregate).\n- **Simple explanation:** The most the insurance company will pay.\n- **Example:** A GL policy has a $1,000,000 each occurrence limit and a $2,000,000 general aggregate limit.\n- **How it's used in an agency:** Limits are shown on declarations pages and certificates. VAs check that limits on documents match the policy exactly.\n\n### Exclusion\n- **Full meaning:** A policy provision that removes certain risks, losses, or property from coverage.\n- **Simple explanation:** Something the policy does not cover.\n- **Example:** Many homeowners policies exclude flood damage, so a separate flood policy is needed.\n- **How it's used in an agency:** Licensed staff explain exclusions to clients. VAs should know exclusions exist and never promise a loss is covered.\n\n### Endorsement\n- **Full meaning:** A written change added to a policy that adds, removes, or modifies coverage.\n- **Simple explanation:** An add-on or change to the policy.\n- **Example:** An additional insured endorsement is added to a contractor's GL policy so a general contractor gets certain protection.\n- **How it's used in an agency:** Endorsement requests are sent to the carrier by licensed staff. VAs check for endorsements before certificate wording like additional insured is used.\n\n### Declarations Page (Dec page)\n- **Full meaning:** The page, usually at the front of a policy, that summarizes the key details: named insured, policy number, policy period, coverages, limits, deductibles, and premium.\n- **Simple explanation:** The summary page of the policy.\n- **Example:** A client asks for proof of their home coverage limits. Staff send the current dec page.\n- **How it's used in an agency:** VAs use the dec page as a source document to check names, dates, and limits on certificates and in the AMS.\n\n## Key takeaways\n- Premium is the price; deductible is what the insured pays first on a loss.\n- Coverage is what is protected; a limit is the most the policy pays; an exclusion is what is not covered.\n- An endorsement changes the policy.\n- The declarations page summarizes the policy and is a key source for checking documents."
+    },
+    {
+      "title": "Parties to the Policy",
+      "minutes": 10,
+      "body": "An insurance policy involves several people and companies. Knowing who is who helps you file documents correctly, address emails to the right party, and read certificates with confidence.\n\n### Policyholder\n- **Full meaning:** The person or organization that owns the insurance policy and is responsible for paying the premium.\n- **Simple explanation:** The owner of the policy.\n- **Example:** Jose buys an auto policy for his car. Jose is the policyholder.\n- **How it's used in an agency:** The policyholder is the client in the AMS. Agencies usually make policy changes only when requested by the policyholder or an authorized person.\n\n### Insured\n- **Full meaning:** Any person or organization protected by the policy. This can include the named insured and others the policy defines as insureds.\n- **Simple explanation:** Anyone the policy covers.\n- **Example:** On a personal auto policy, family members living in the household may also be insureds.\n- **How it's used in an agency:** Staff read the policy definitions to understand who is an insured. VAs should not guess who is covered.\n\n### Named Insured\n- **Full meaning:** The person or business specifically named on the declarations page as the insured.\n- **Simple explanation:** The exact name printed on the policy.\n- **Example:** The dec page shows \"Lopez Family Dental PLLC\" as the named insured.\n- **How it's used in an agency:** Certificates, ID cards, and forms must show the named insured exactly as on the policy, including LLC, Inc., or DBA.\n\n### Carrier\n- **Full meaning:** The insurance company that issues the policy and pays covered claims. Also called the insurer or company.\n- **Simple explanation:** The insurance company.\n- **Example:** An agency places a client's GL policy with Example Mutual Insurance Company. That company is the carrier.\n- **How it's used in an agency:** Agencies work with many carriers. VAs log in to carrier portals, download documents, and send requests according to agency procedures.\n\n### Producer\n- **Full meaning:** A licensed insurance agent or agency that sells insurance and places policies with carriers. On ACORD forms, the producer section shows the agency.\n- **Simple explanation:** The licensed agent or agency that sold the policy.\n- **Example:** The producer box on a certificate lists the agency's name, address, and contact.\n- **How it's used in an agency:** Producers handle quoting and coverage advice. VAs support producers with paperwork, follow-ups, and data entry.\n\n## Key takeaways\n- The policyholder owns the policy; insureds are everyone the policy protects.\n- The named insured must be written exactly as on the dec page.\n- The carrier is the insurance company; the producer is the licensed agency or agent."
+    },
+    {
+      "title": "Policy Dates and the Policy Lifecycle",
+      "minutes": 12,
+      "body": "Every policy has a beginning, an end, and a process before and after. These terms describe that lifecycle. Many daily VA tasks, such as renewal reminders and document checks, depend on understanding them.\n\n### Underwriting\n- **Full meaning:** The process the carrier uses to review a risk and decide whether to offer coverage, on what terms, and at what price.\n- **Simple explanation:** How the insurance company decides to accept a client and sets the price.\n- **Example:** An underwriter asks for three years of loss history before quoting a restaurant.\n- **How it's used in an agency:** VAs help gather underwriting information, such as applications and loss runs, and send it to the carrier for licensed staff.\n\n### Binder\n- **Full meaning:** A temporary written agreement that provides coverage until the formal policy is issued.\n- **Simple explanation:** Temporary proof that coverage has started.\n- **Example:** A homebuyer's lender needs proof of insurance before closing. The agency issues a binder while the policy is being processed.\n- **How it's used in an agency:** Binders are issued only by authorized staff following carrier and agency rules. VAs track binders and follow up for the final policy.\n\n### Effective Date\n- **Full meaning:** The date and time a policy, or a change to it, begins.\n- **Simple explanation:** The start date of coverage.\n- **Example:** A policy is effective 03/01 this year at 12:01 a.m.\n- **How it's used in an agency:** VAs check effective dates on certificates and in the AMS and enter policy changes with the correct effective date.\n\n### Expiration Date\n- **Full meaning:** The date and time a policy ends, unless it is renewed.\n- **Simple explanation:** The end date of coverage.\n- **Example:** A policy effective 03/01 this year expires 03/01 next year.\n- **How it's used in an agency:** VAs track upcoming expiration dates to start renewal work and make sure certificates show current policies.\n\n### Renewal\n- **Full meaning:** Continuing a policy for a new policy period after the current one expires, often with updated terms and premium.\n- **Simple explanation:** Starting a new policy term when the old one ends.\n- **Example:** A business owners policy renews every year on 07/01 with a new premium.\n- **How it's used in an agency:** Agencies run renewal lists in the AMS. VAs send reminders, request updated information, and update certificates after renewal.\n\n### Cancellation\n- **Full meaning:** Ending a policy before its expiration date, either by the policyholder or the carrier, under the policy terms and applicable law.\n- **Simple explanation:** Ending the policy early.\n- **Example:** A client sells their car and asks to cancel the auto policy mid-term.\n- **How it's used in an agency:** Cancellation requests are documented carefully and handled per agency procedures. Notice rules vary by state and policy.\n\n### Non-renewal\n- **Full meaning:** A decision by the carrier, or the insured, not to continue a policy for another term at expiration.\n- **Simple explanation:** The policy is not continued after it ends.\n- **Example:** A carrier sends a notice that it will not renew a home policy because of roof condition.\n- **How it's used in an agency:** When a non-renewal notice arrives, VAs log it in the AMS and alert licensed staff so they can look for other options in time.\n\n## Key takeaways\n- Underwriting is how carriers decide on coverage and price.\n- A binder is temporary proof of coverage.\n- Effective and expiration dates mark the start and end of coverage.\n- Renewal continues a policy; cancellation ends it early; non-renewal means it will not continue after expiration."
+    },
+    {
+      "title": "Certificates and Proof of Insurance",
+      "minutes": 10,
+      "body": "Proof-of-insurance requests are among the most common VA tasks. These terms appear in emails, contracts, and on ACORD forms. Remember that a certificate only shows coverage; it never changes it.\n\n### Certificate of Insurance (COI)\n- **Full meaning:** A document that summarizes key policy information as evidence that coverage exists at a point in time.\n- **Simple explanation:** Proof of insurance on one page.\n- **Example:** A cleaning company needs a COI before it can work in an office building.\n- **How it's used in an agency:** VAs often prepare COI drafts in the AMS for review. Certificates are issued only by authorized staff following agency procedures.\n\n### ACORD\n- **Full meaning:** Association for Cooperative Operations Research and Development, a nonprofit that creates standard insurance forms and data standards.\n- **Simple explanation:** The organization that makes standard insurance forms.\n- **Example:** The ACORD 25 is the standard Certificate of Liability Insurance.\n- **How it's used in an agency:** Agencies use ACORD forms for certificates, applications, and loss notices, usually generated from the AMS.\n\n### Certificate Holder\n- **Full meaning:** The person or organization that requests and receives a certificate of insurance.\n- **Simple explanation:** The party who gets the certificate.\n- **Example:** A landlord asks for a certificate from a tenant's agency. The landlord is the certificate holder.\n- **How it's used in an agency:** VAs enter the holder's full legal name and address. Being a holder does not give coverage.\n\n### Additional Insured (AI)\n- **Full meaning:** A person or organization added to someone else's policy by endorsement, giving them certain protection under that policy.\n- **Simple explanation:** Someone added to another party's policy for certain protection.\n- **Example:** A general contractor requires a subcontractor to add it as an additional insured on the subcontractor's GL policy.\n- **How it's used in an agency:** AI status must be supported by an endorsement. VAs check the policy and route AI requests to licensed staff.\n\n### Waiver of Subrogation\n- **Full meaning:** An agreement, provided by endorsement or policy wording, in which the carrier gives up its right to recover claim payments from a specific party.\n- **Simple explanation:** The insurance company agrees not to go after a certain party to get its money back.\n- **Example:** A contract requires a waiver of subrogation in favor of the property owner on a contractor's workers' compensation policy.\n- **How it's used in an agency:** This appears as SUBR WVD on the ACORD 25. It must be supported by the policy, and requests go to licensed staff.\n\n## Key takeaways\n- A COI is evidence of coverage only.\n- ACORD creates the standard forms used for certificates.\n- A certificate holder receives proof; an additional insured has certain coverage by endorsement.\n- A waiver of subrogation must be supported by the policy."
+    },
+    {
+      "title": "Policy Types and Lines of Business",
+      "minutes": 14,
+      "body": "Agencies sell many kinds of insurance. Each kind is a line of business. This lesson covers the common policy types and abbreviations you will see in the AMS, on certificates, and in emails. Coverage details always depend on the specific policy and carrier forms.\n\n### Line of Business (LOB)\n- **Full meaning:** A category of insurance, such as personal auto, homeowners, general liability, or workers' compensation.\n- **Simple explanation:** A type of insurance.\n- **Example:** A client has three LOBs with the agency: GL, commercial auto, and WC.\n- **How it's used in an agency:** The AMS organizes policies by LOB. VAs pick the right LOB when filing documents or creating activities.\n\n### General Liability (GL or CGL)\n- **Full meaning:** Commercial General Liability insurance, which protects a business against claims of bodily injury, property damage, and personal and advertising injury to others.\n- **Simple explanation:** Business insurance for injuries or damage to other people.\n- **Example:** A painter accidentally damages a client's floor. The painter's GL policy may respond.\n- **How it's used in an agency:** GL is the most common coverage on ACORD 25 certificates.\n\n### Business Owners Policy (BOP)\n- **Full meaning:** A package policy for small to mid-size businesses that combines property and general liability coverage, often with business income coverage.\n- **Simple explanation:** A bundle of property and liability insurance for small businesses.\n- **Example:** A small coffee shop buys a BOP to cover its equipment and its liability.\n- **How it's used in an agency:** VAs see BOPs often for small business clients. On a certificate, the liability part of a BOP is shown in the GL row.\n\n### HO3\n- **Full meaning:** Homeowners Special Form. It generally covers the dwelling on an open-perils basis and personal property on a named-perils basis, subject to exclusions.\n- **Simple explanation:** The most common homeowners policy for a house the owner lives in.\n- **Example:** A family that owns their house has an HO3 policy.\n- **How it's used in an agency:** VAs see HO3 on quotes and dec pages for personal lines clients and may prepare evidence of insurance for lenders, following agency procedures.\n\n### HO4\n- **Full meaning:** Renters or Tenant Form. It covers the renter's personal property and personal liability, but not the building.\n- **Simple explanation:** Renters insurance.\n- **Example:** An apartment tenant buys an HO4 to cover their furniture and electronics.\n- **How it's used in an agency:** Landlords often ask tenants for proof of renters insurance, which VAs may help send.\n\n### HO6\n- **Full meaning:** Condominium Unit Owners Form. It covers the owner's personal property, liability, and parts of the unit not covered by the condo association's master policy.\n- **Simple explanation:** Insurance for condo owners.\n- **Example:** A condo owner buys an HO6 to cover interior walls, cabinets, and belongings.\n- **How it's used in an agency:** VAs may request the association's master policy information when supporting HO6 quotes.\n\n### Umbrella\n- **Full meaning:** A policy that provides extra liability limits above underlying policies such as GL, auto, or homeowners, and sometimes broader coverage. Excess liability is similar but usually follows the underlying policy terms.\n- **Simple explanation:** Extra liability protection on top of other policies.\n- **Example:** A contractor with a $1,000,000 GL policy adds a $2,000,000 umbrella to meet a contract requirement.\n- **How it's used in an agency:** Umbrella policies appear in their own row on the ACORD 25. VAs check that underlying policies are in place and dates line up.\n\n### Workers' Compensation (WC)\n- **Full meaning:** Insurance that pays medical costs and lost wages for employees injured on the job, according to state law. It usually includes employers' liability coverage.\n- **Simple explanation:** Insurance for employees hurt at work.\n- **Example:** A warehouse worker hurts their back lifting boxes. The employer's WC policy pays benefits.\n- **How it's used in an agency:** WC rules vary by state. VAs help collect payroll and employee information for audits and renewals.\n\n### Errors and Omissions (E&O)\n- **Full meaning:** Professional liability insurance that protects against claims of mistakes, negligence, or failure to perform professional services.\n- **Simple explanation:** Insurance for professional mistakes.\n- **Example:** An accountant is sued for a tax filing error. The accountant's E&O policy may respond.\n- **How it's used in an agency:** Agencies sell E&O to professionals and also carry their own E&O. Careful documentation in the AMS helps protect the agency.\n\n## Key takeaways\n- LOB means line of business, a type of insurance.\n- GL and BOP are common business policies; HO3, HO4, and HO6 are home, renters, and condo forms.\n- Umbrella adds extra liability limits; WC covers injured employees; E&O covers professional mistakes.\n- Coverage details depend on the specific policy and can vary by carrier and state."
+    },
+    {
+      "title": "Auto Insurance Terms",
+      "minutes": 10,
+      "body": "Auto insurance has its own vocabulary. These terms appear on auto applications, ID cards, and policy changes. Some auto coverages and requirements are different from state to state, so always follow the policy and agency guidance.\n\n### Motor Vehicle Record (MVR)\n- **Full meaning:** A driving history report from a state motor vehicle agency showing violations, accidents, and license status.\n- **Simple explanation:** A driver's driving record.\n- **Example:** An MVR shows a driver had a speeding ticket last year.\n- **How it's used in an agency:** Carriers and agencies order MVRs during underwriting, following privacy rules. VAs may help collect driver license details for this process.\n\n### Vehicle Identification Number (VIN)\n- **Full meaning:** A unique 17-character code that identifies a specific vehicle.\n- **Simple explanation:** The vehicle's unique ID number.\n- **Example:** A client adds a new truck, and the agency needs the VIN to add it to the policy.\n- **How it's used in an agency:** VAs enter and double-check VINs carefully. One wrong character can mean the wrong vehicle is listed.\n\n### Personal Injury Protection (PIP)\n- **Full meaning:** Auto coverage that pays medical expenses and sometimes lost wages for the driver and passengers after an accident, regardless of fault, in states that offer or require it.\n- **Simple explanation:** Medical coverage for you and your passengers after a car accident, no matter who caused it.\n- **Example:** After a crash, PIP helps pay the driver's hospital bills.\n- **How it's used in an agency:** PIP availability and requirements vary by state. VAs should not explain PIP rules; they route questions to licensed staff.\n\n### Uninsured / Underinsured Motorist (UM/UIM)\n- **Full meaning:** Auto coverage that protects the insured when the at-fault driver has no insurance (uninsured) or not enough insurance (underinsured).\n- **Simple explanation:** Protection when the other driver has no insurance or too little.\n- **Example:** A client is hit by a driver with no insurance. The client's UM coverage may help pay for injuries.\n- **How it's used in an agency:** UM/UIM options and forms vary by state. Signed selection or rejection forms are saved in the AMS according to agency procedures.\n\n## Key takeaways\n- MVR is a driving record; VIN is a vehicle's unique ID.\n- PIP pays medical costs regardless of fault where available.\n- UM/UIM protects when the other driver has no or too little insurance.\n- Auto rules vary by state, so route coverage questions to licensed staff."
+    },
+    {
+      "title": "Agency Systems, Claims, and Billing",
+      "minutes": 12,
+      "body": "This lesson covers the tools agencies use every day and the words related to claims and billing. Knowing these terms helps you work faster in agency software and communicate clearly with clients and carriers.\n\n### Agency Management System (AMS)\n- **Full meaning:** Software that stores client records, policies, documents, activities, and accounting for an insurance agency.\n- **Simple explanation:** The main computer system where the agency keeps all client and policy information.\n- **Example:** A VA opens the AMS to find a client's policy number and generate a certificate.\n- **How it's used in an agency:** VAs use the AMS for data entry, document filing, certificates, renewals, and activity notes. Accurate entries are very important.\n\n### Customer Relationship Management (CRM)\n- **Full meaning:** Software used to track contacts, leads, communication, and follow-ups with clients and prospects.\n- **Simple explanation:** A system for managing relationships and follow-ups with customers.\n- **Example:** The CRM reminds a VA to follow up with a prospect who asked for a quote.\n- **How it's used in an agency:** Some agencies use a separate CRM; others use CRM features inside the AMS. VAs log calls and emails and set follow-up tasks.\n\n### Claim\n- **Full meaning:** A request by an insured or a third party for payment under an insurance policy after a loss.\n- **Simple explanation:** Asking the insurance company to pay for a loss.\n- **Example:** A client's delivery van is damaged in an accident, so a claim is filed with the carrier.\n- **How it's used in an agency:** VAs may help report a claim to the carrier, collect details, and track claim status, following agency procedures. They do not decide whether a claim is covered.\n\n### Loss Run\n- **Full meaning:** A report from a carrier showing the claim history on a policy over a period of time, including dates, amounts paid, and open or closed status.\n- **Simple explanation:** A list of past claims on a policy.\n- **Example:** A new carrier asks for five years of loss runs before quoting a trucking company.\n- **How it's used in an agency:** VAs request loss runs from carriers, often for renewals or new quotes, and save them in the AMS.\n\n### Direct Bill and Agency Bill\n- **Full meaning:** Two billing methods. With direct bill, the carrier bills and collects premium from the insured. With agency bill, the agency bills the insured and pays the carrier.\n- **Simple explanation:** Who sends the bill: the insurance company or the agency.\n- **Example:** A homeowner receives invoices directly from the carrier, so the policy is direct bill.\n- **How it's used in an agency:** VAs check the billing method in the AMS before answering payment questions or sending reminders.\n\n## Key takeaways\n- The AMS is the main agency system; a CRM tracks relationships and follow-ups.\n- A claim is a request for payment after a loss; VAs support but do not decide coverage.\n- A loss run is a claim history report used for renewals and new quotes.\n- Direct bill means the carrier bills the client; agency bill means the agency does."
+    }
+  ],
+  "quiz": {
+    "title": "Insurance Terminology Quiz",
+    "description": "Test your knowledge of common insurance terms and abbreviations used in agencies.",
+    "pass_percent": 70,
+    "questions": [
+      {
+        "prompt": "What is a premium?",
+        "options": [
+          "The amount the insured pays first on a loss",
+          "The price paid for an insurance policy",
+          "The most a policy will pay for a loss",
+          "A written change to the policy"
+        ],
+        "answer": 1,
+        "explanation": "The premium is the price of the policy. The deductible is what the insured pays first, and the limit is the most the policy pays."
+      },
+      {
+        "scenario": "A client has a $500 deductible on their auto physical damage coverage. A covered accident causes $3,000 in damage.",
+        "prompt": "How much would the carrier generally pay?",
+        "options": [
+          "$3,000",
+          "$3,500",
+          "$500",
+          "$2,500"
+        ],
+        "answer": 3,
+        "explanation": "The insured pays the $500 deductible, so the carrier generally pays the remaining $2,500 of the covered loss."
+      },
+      {
+        "prompt": "Which document is the summary page showing the named insured, policy period, coverages, limits, and premium?",
+        "options": [
+          "Declarations page",
+          "Loss run",
+          "Binder",
+          "MVR"
+        ],
+        "answer": 0,
+        "explanation": "The declarations (dec) page summarizes the key details of the policy."
+      },
+      {
+        "prompt": "What does HO4 refer to?",
+        "options": [
+          "Condominium unit owners insurance",
+          "Homeowners special form for a house",
+          "Renters (tenant) insurance",
+          "Workers' compensation for home workers"
+        ],
+        "answer": 2,
+        "explanation": "HO4 is the renters or tenant form. HO3 is the homeowners special form and HO6 is for condo unit owners."
+      },
+      {
+        "scenario": "A landlord receives a certificate of insurance from a tenant's agency and is listed in the certificate holder box.",
+        "prompt": "What does being the certificate holder mean?",
+        "options": [
+          "The landlord is now an additional insured",
+          "The landlord receives proof of insurance but gets no coverage from being listed",
+          "The landlord must pay part of the premium",
+          "The landlord can cancel the policy"
+        ],
+        "answer": 1,
+        "explanation": "A certificate holder only receives evidence of coverage. Additional insured status requires an endorsement on the policy."
+      },
+      {
+        "prompt": "A new carrier asks for a report showing the client's past claims over five years. What document is this?",
+        "options": [
+          "Binder",
+          "Endorsement",
+          "Declarations page",
+          "Loss run"
+        ],
+        "answer": 3,
+        "explanation": "A loss run is a carrier report of claim history, often needed for renewals and new quotes."
+      },
+      {
+        "prompt": "What does AMS stand for in an insurance agency?",
+        "options": [
+          "Agency Management System",
+          "Automated Mortgage Service",
+          "Annual Minimum Surcharge",
+          "Additional Member Schedule"
+        ],
+        "answer": 0,
+        "explanation": "The AMS is the Agency Management System, the main software for client, policy, and document records."
+      },
+      {
+        "scenario": "A carrier sends a notice saying it will not continue a client's home policy when the current term ends next month.",
+        "prompt": "Which term describes this?",
+        "options": [
+          "Cancellation",
+          "Renewal",
+          "Non-renewal",
+          "Endorsement"
+        ],
+        "answer": 2,
+        "explanation": "Non-renewal means the policy will not continue after expiration. Cancellation ends a policy before its expiration date."
+      },
+      {
+        "prompt": "Which coverage protects the insured when the at-fault driver has no insurance or not enough insurance?",
+        "options": [
+          "PIP",
+          "E&O",
+          "WC",
+          "UM/UIM"
+        ],
+        "answer": 3,
+        "explanation": "Uninsured/Underinsured Motorist (UM/UIM) coverage applies when the other driver has no or too little insurance."
+      },
+      {
+        "scenario": "A homebuyer's lender needs proof of insurance today, but the formal policy will not be issued for a few weeks.",
+        "prompt": "Which document provides temporary coverage until the policy is issued?",
+        "options": [
+          "Loss run",
+          "Binder",
+          "MVR",
+          "Exclusion"
+        ],
+        "answer": 1,
+        "explanation": "A binder is a temporary agreement providing coverage until the formal policy is issued, and only authorized staff may issue it."
+      }
+    ]
+  }
+}

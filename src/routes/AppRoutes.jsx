@@ -30,6 +30,27 @@ const CategoriesPage = lazyPage(() => import('@/pages/admin/CategoriesPage'))
 const AdminAnnouncementsPage = lazyPage(() => import('@/pages/admin/AnnouncementsPage'))
 const ActivityLogsPage = lazyPage(() => import('@/pages/admin/ActivityLogsPage'))
 const MemberAnnouncementsPage = lazyPage(() => import('@/pages/member/AnnouncementsPage'))
+const ExploreNichesPage = lazyPage(() => import('@/pages/member/ExploreNichesPage'))
+const LavaPortalLayout = lazyPage(() => import('@/pages/lava/LavaPortalLayout'))
+const LavaOverviewPage = lazyPage(() => import('@/pages/lava/LavaOverviewPage'))
+const LavaCareersPage = lazyPage(() => import('@/pages/lava/LavaCareersPage'))
+const LavaAgreementPage = lazyPage(() => import('@/pages/lava/LavaAgreementPage'))
+const LavaCoursesPage = lazyPage(() => import('@/pages/lava/LavaCoursesPage'))
+const LavaCoursePage = lazyPage(() => import('@/pages/lava/LavaCoursePage'))
+const LavaLessonPage = lazyPage(() => import('@/pages/lava/LavaLessonPage'))
+const LavaAssessmentsPage = lazyPage(() => import('@/pages/lava/LavaAssessmentsPage'))
+const LavaAssessmentRunPage = lazyPage(() => import('@/pages/lava/LavaAssessmentRunPage'))
+const LavaSimulatorPage = lazyPage(() => import('@/pages/lava/LavaSimulatorPage'))
+const AdminLavaLayout = lazyPage(() => import('@/pages/admin/lava/AdminLavaLayout'))
+const AdminLavaOverviewPage = lazyPage(() => import('@/pages/admin/lava/AdminLavaOverviewPage'))
+const AdminLavaContentPage = lazyPage(() => import('@/pages/admin/lava/AdminLavaContentPage'))
+const AdminLavaPositionsPage = lazyPage(() => import('@/pages/admin/lava/AdminLavaPositionsPage'))
+const AdminLavaCoursesPage = lazyPage(() => import('@/pages/admin/lava/AdminLavaCoursesPage'))
+const AdminLavaCourseDetailPage = lazyPage(() => import('@/pages/admin/lava/AdminLavaCourseDetailPage'))
+const AdminLavaAssessmentsPage = lazyPage(() => import('@/pages/admin/lava/AdminLavaAssessmentsPage'))
+const AdminLavaAssessmentDetailPage = lazyPage(() => import('@/pages/admin/lava/AdminLavaAssessmentDetailPage'))
+const AdminLavaRequestsPage = lazyPage(() => import('@/pages/admin/lava/AdminLavaRequestsPage'))
+const AdminLavaApplicantsPage = lazyPage(() => import('@/pages/admin/lava/AdminLavaApplicantsPage'))
 
 export default function AppRoutes() {
   return (
@@ -57,6 +78,19 @@ export default function AppRoutes() {
           <Route path="/favorites" element={<FavoritesPage />} />
           <Route path="/profile" element={<ProfilePage />} />
           <Route path="/announcements" element={<MemberAnnouncementsPage />} />
+          <Route path="/explore-niches" element={<ExploreNichesPage />} />
+          <Route path="/lava-portal" element={<LavaPortalLayout />}>
+            <Route index element={<LavaOverviewPage />} />
+            <Route path="careers" element={<LavaCareersPage />} />
+            <Route path="agreement" element={<LavaAgreementPage />} />
+            <Route path="courses" element={<LavaCoursesPage />} />
+            <Route path="courses/:slug" element={<LavaCoursePage />} />
+            <Route path="courses/:slug/lessons/:lessonId" element={<LavaLessonPage />} />
+            <Route path="assessments" element={<LavaAssessmentsPage />} />
+            <Route path="assessments/:id" element={<LavaAssessmentRunPage />} />
+            <Route path="simulator" element={<LavaSimulatorPage />} />
+            <Route path="simulator/:id" element={<LavaAssessmentRunPage simulator />} />
+          </Route>
           <Route path="*" element={<NotFoundPage />} />
         </Route>
 
@@ -71,6 +105,17 @@ export default function AppRoutes() {
             <Route path="members" element={<MembersPage />} />
             <Route path="members/:id" element={<MemberDetailsPage />} />
             <Route path="activity" element={<ActivityLogsPage />} />
+            <Route path="lava" element={<AdminLavaLayout />}>
+              <Route index element={<AdminLavaOverviewPage />} />
+              <Route path="content" element={<AdminLavaContentPage />} />
+              <Route path="positions" element={<AdminLavaPositionsPage />} />
+              <Route path="courses" element={<AdminLavaCoursesPage />} />
+              <Route path="courses/:id" element={<AdminLavaCourseDetailPage />} />
+              <Route path="assessments" element={<AdminLavaAssessmentsPage />} />
+              <Route path="assessments/:id" element={<AdminLavaAssessmentDetailPage />} />
+              <Route path="requests" element={<AdminLavaRequestsPage />} />
+              <Route path="applicants" element={<AdminLavaApplicantsPage />} />
+            </Route>
             <Route path="*" element={<NotFoundPage />} />
           </Route>
         </Route>

@@ -87,6 +87,8 @@ The database is created by 9 migration files in `supabase/migrations/`. They run
 | 8 | `20261119100000_self_signup.sql` | "Create account": new-account setting | No (adds a settings table) |
 | 9 | `20261120100000_direct_login_alert_email.sql` | Alert emails (superseded by 10) | No (replaces a function) |
 | 10 | `20261121100000_remove_alerts_admin_status.sql` | Removes alert emails; admin activate/deactivate/edit in the database | No (deletes only stored alert settings) |
+| 11 | `20261122100000_lava_portal.sql` | LAVA applicant portal tables, RLS and functions | No (adds tables; extends allowed activity-log values) |
+| 12 | `20261122100100_lava_seed_content.sql` | LAVA courses, quizzes and simulator activities; draft company sections | No (inserts only what's missing) |
 
 None of them delete members, progress, favorites, resources or files.
 
@@ -150,6 +152,19 @@ Safe to run again. If you ran an earlier version that set up login alert emails,
 | Deactivate shows "Run supabase/setup/1_enable_create_account.sql…" | Step 2 wasn't run yet |
 
 **Optional:** **Add member** (you create the account and the person gets an invitation email), **Send access email** and changing a member's email appear only once the `admin-members` Edge Function from step 4 is deployed. Everything else works without it.
+
+### 4c. LAVA Automation applicant portal (copy-paste, no terminal)
+
+1. In VS Code, open [supabase/setup/2_lava_portal.sql](supabase/setup/2_lava_portal.sql) and copy everything.
+2. Supabase → **SQL Editor → New query** → paste → **Run**.
+3. You'll see: *"LAVA portal ready…"*
+
+Then, signed in as admin, open **Admin → LAVA Applicants**:
+- **Company content:** the six company sections (What is LAVA, history, mission/vision, services, niches, clients) start as **drafts with [placeholders]**. Members can't see them until you replace the text with verified information and set them to **Published**.
+- **Positions:** none are created for you. Add positions with confirmed salaries and click **Publish (hiring)**.
+- Courses, quizzes and simulator activities are ready to use and editable.
+
+Safe to run again; it never overwrites your edits. Details: [docs/LAVA_PORTAL.md](docs/LAVA_PORTAL.md).
 
 ---
 

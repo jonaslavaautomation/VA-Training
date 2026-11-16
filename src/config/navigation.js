@@ -1,6 +1,6 @@
 import {
   LayoutDashboard, Library, PlayCircle, FileText, Heart, GraduationCap, Megaphone,
-  Upload, FolderTree, Users, Activity, FolderOpen, UserRound, LogOut,
+  Upload, FolderTree, Users, Activity, FolderOpen, UserRound, LogOut, Briefcase, Compass,
 } from 'lucide-react'
 
 /** Member portal sidebar. */
@@ -12,6 +12,13 @@ export const memberNavigation = [
       { to: '/library', label: 'Training Library', icon: Library },
       { to: '/library?type=VIDEO', label: 'Video Library', icon: PlayCircle },
       { to: '/library?type=PDF', label: 'PDF Library', icon: FileText },
+    ],
+  },
+  {
+    label: 'Career Paths',
+    items: [
+      { to: '/lava-portal', label: 'LAVA Automation', icon: Briefcase },
+      { to: '/explore-niches', label: 'Explore VA Niches', icon: Compass },
     ],
   },
   {
@@ -56,6 +63,10 @@ export const adminNavigation = [
       { to: '/admin/categories', label: 'Categories', icon: FolderTree },
       { to: '/admin/announcements', label: 'Announcements', icon: Megaphone },
     ],
+  },
+  {
+    label: 'LAVA Applicants',
+    items: [{ to: '/admin/lava', label: 'Applicant Management', icon: Briefcase }],
   },
   {
     label: 'Records',

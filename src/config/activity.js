@@ -30,6 +30,12 @@ export const ACTIVITY_LABELS = {
   announcement_unpublished: 'Announcement unpublished',
   announcement_archived: 'Announcement archived',
   announcement_deleted: 'Announcement deleted',
+  lava_content_updated: 'LAVA content updated',
+  lava_position_created: 'LAVA position created',
+  lava_position_status_changed: 'LAVA position status changed',
+  lava_position_deleted: 'LAVA position deleted',
+  simulator_access_approved: 'Simulator access approved',
+  simulator_access_rejected: 'Simulator access rejected',
 }
 
 export const MEMBER_ACTIVITY_TYPES = ['signed_in', 'viewed', 'watched', 'downloaded', 'completed', 'favorited']
@@ -37,8 +43,8 @@ export const ADMIN_ACTIVITY_TYPES = Object.keys(ACTIVITY_LABELS).filter((t) => !
 
 /** Tone for the action badge. */
 export function activityTone(type) {
-  if (/deleted|deactivated|unpublished|archived/.test(type)) return 'red'
-  if (/created|uploaded|published|activated/.test(type)) return 'mint'
+  if (/deleted|deactivated|unpublished|archived|rejected/.test(type)) return 'red'
+  if (/created|uploaded|published|activated|approved/.test(type)) return 'mint'
   if (MEMBER_ACTIVITY_TYPES.includes(type)) return 'gray'
   return 'navy'
 }

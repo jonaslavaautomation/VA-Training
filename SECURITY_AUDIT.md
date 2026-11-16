@@ -46,6 +46,11 @@ Severity scale: **Critical** (exploitable data breach), **High**, **Medium**, **
 | L3 | Activate/deactivate and member edits now run in the database instead of the Edge Function | Info | `admin_set_member_status`, `admin_update_member` | Same checks as the function | **Verified.** SECURITY DEFINER with fixed `search_path`; callable only by active admins (anon has no execute); blocks self-deactivation, own role change and removing the last active admin; writes the audit log (tested) |
 | L2 | "Signed in" activity entries were written by the browser and could be skipped or faked | Low | `activity_logs` | Record sign-ins with a server-side trigger; forbid browser inserts of `signed_in` | **Resolved**. Trigger on `auth.users.last_sign_in_at`; browser insert now rejected (tested) |
 | A6 | Admin-only error messages from `delete_category` may show short database messages | Info | `src/services/categoryService.js` | Messages are written by our function; admins only | **Accepted** |
+| V1 | **LAVA portal (Phase 7A):** quiz/simulator answers must not reach members | Medium (integrity) | `lava_questions`, `lava_get_assessment()`, `lava_submit_attempt()` | Answer key admin-only; questions served without answers; server-side grading | **Resolved by design.** `lava_questions` RLS is admin-only; the read function strips `answer`; results return right/wrong + explanation only (tested in DB and browser) |
+| V2 | Members could approve their own simulator access or fake agreement/scores via the API | High if missed | `lava_simulator_requests`, `lava_agreements`, `lava_attempts` | No direct writes; only SECURITY DEFINER functions with admin / own-row checks | **Resolved by design.** INSERT/UPDATE/DELETE revoked from `authenticated`; approval function is admin-only and refuses an admin's own request (tested: PATCH, INSERT and RPC attempts all refused) |
+| V3 | Preparation lessons and simulator must stay locked until agreement / approval even if the UI is bypassed | Medium | `lava_lessons` RLS, `lava_has_agreed()`, `lava_has_simulator_access()` | Enforce in RLS and in the functions | **Resolved.** Lessons RLS requires agreement; assessment functions require agreement, simulator also approval (tested via direct API calls) |
+| V4 | Unverified company facts, salaries or vacancies could be presented as real | Info (content) | `lava_content`, `lava_positions` | Drafts hidden until an admin publishes; no seeded positions | **Resolved.** Company sections seeded as drafts with [placeholders]; publishing placeholder text shows a warning; positions only appear when an admin publishes them |
+| V5 | Admin-entered lesson/company text is rendered to members | Low (XSS) | `src/components/lava/RichText.jsx` | Render as React text, never HTML | **Resolved.** A small formatter builds React elements; no `dangerouslySetInnerHTML` |
 
 **No open Critical or High issues.** Every Medium code issue is resolved. The open Medium items are **dashboard settings you need to apply** (C2, C4), plus **C1, public sign-up**, which you chose deliberately (an accepted risk with built-in safeguards).
 
@@ -77,6 +82,17 @@ Severity scale: **Critical** (exploitable data breach), **High**, **Medium**, **
   - inactive members get **nothing** from any table except their own profile row;
   - inactive admins lose admin rights.
 - Deactivation preserves progress and favorites.
+
+### LAVA applicant portal (Phase 7A) — `supabase/tests/lava.test.mjs`, 79 checks; `npm run test:lava`, 38 browser checks
+| Control | How verified |
+|---|---|
+| Anonymous visitors have no access to any `lava_*` table or function | DB test (permission denied on every table + RPC) |
+| Members see published content/positions only; drafts and archived hidden | DB + browser |
+| Agreement: all three answers required; only "Yes ×3" unlocks; stored with server timestamps; one row per member; members can't read or edit another member's row; admins can read but not edit; agreeing doesn't change role/status | DB + browser |
+| Lessons, progress and assessments locked before agreement | DB + browser (direct API call) |
+| Answer key never sent to members; grading server-side; fake scores rejected | DB + browser |
+| Simulator: locked until approval; request = Pending; members can't approve (PATCH/INSERT/RPC refused); admin approve/reject with note; reject re-locks; admins can't decide their own request; decisions audited | DB + browser |
+| Deactivated members lose all LAVA access | DB + browser |
 
 ### Storage
 - **4 buckets, all private**, with size and type limits (SVG not allowed).
