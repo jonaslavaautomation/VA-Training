@@ -9,6 +9,7 @@ import Input from '@/components/ui/Input'
 import Button from '@/components/ui/Button'
 import { HiringBadge } from '@/components/lava/LavaUi'
 import { ConfirmDelete, TextArea } from '@/components/lava/AdminFields'
+import RichTextEditor from '@/components/lava/RichTextEditor'
 import { useAsync } from '@/hooks/useAsync'
 import { useAuth } from '@/hooks/useAuth'
 import { useToast } from '@/hooks/useToast'
@@ -42,7 +43,7 @@ function PositionModal({ position, onClose, onSaved }) {
   }
 
   return (
-    <Modal open onClose={saving ? undefined : onClose} title={position ? 'Edit position' : 'Add position'} description={position ? undefined : 'New positions are saved as drafts. Publish them when the details are confirmed.'} footer={
+    <Modal open size="lg" onClose={saving ? undefined : onClose} title={position ? 'Edit position' : 'Add position'} description={position ? undefined : 'New positions are saved as drafts. Publish them when the details are confirmed.'} footer={
       <>
         <Button variant="secondary" onClick={onClose} disabled={saving}>Cancel</Button>
         <Button onClick={save} loading={saving}>Save</Button>
@@ -50,9 +51,11 @@ function PositionModal({ position, onClose, onSaved }) {
     }>
       <div className="space-y-4">
         {error && <Alert type="error">{error}</Alert>}
-        <Input label="Job title" maxLength={120} value={form.title} onChange={set('title')} placeholder="e.g. Insurance Virtual Assistant" />
-        <Input label="Job niche" maxLength={80} value={form.niche} onChange={set('niche')} placeholder="e.g. Insurance agency support" />
-        <TextArea label="Job description" rows={4} maxLength={5000} value={form.description} onChange={set('description')} />
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <Input label="Job title" maxLength={120} value={form.title} onChange={set('title')} placeholder="e.g. Insurance Virtual Assistant" />
+          <Input label="Job niche" maxLength={80} value={form.niche} onChange={set('niche')} placeholder="e.g. Insurance agency support" />
+        </div>
+        <RichTextEditor label="Job description" rows={6} maxLength={5000} value={form.description} onChange={(description) => setForm((f) => ({ ...f, description }))} />
         <TextArea label="Responsibilities" rows={4} value={form.responsibilities} onChange={set('responsibilities')} hint="One per line." />
         <TextArea label="Required skills" rows={3} value={form.required_skills} onChange={set('required_skills')} hint="One per line." />
         <TextArea label="Qualifications" rows={3} value={form.qualifications} onChange={set('qualifications')} hint="One per line." />

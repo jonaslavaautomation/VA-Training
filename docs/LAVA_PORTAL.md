@@ -34,7 +34,7 @@ Agreeing is **not** an offer or a hiring decision. It doesn't change the member'
 | Courses | Add, edit, reorder or delete courses and lessons. Each lesson has a **Videos & PDFs** button: upload several videos (MP4/WebM) and PDFs at once, set their titles, reorder or remove them, or attach a file already in the Training Library. Uploads use the same resumable upload and private storage as Upload Materials. LAVA files are marked as LAVA material: they are hidden from the general Training Library and listed in Manage Resources with a LAVA badge |
 | Assessments | Quizzes and simulator activities: questions, options, correct answer, explanation, and the simulator "screen" (email, record, form or note) |
 
-Lesson text formatting: a blank line starts a new paragraph, `## ` makes a heading, `- ` a bullet, `1. ` a numbered item, `> ` a highlighted tip, and `**bold**` bold text.
+**Text editor.** Company sections, lessons and job descriptions use a formatting editor with a toolbar (heading, subheading, **bold**, *italic*, underline, link, bulleted and numbered lists, highlighted tip, divider line), keyboard shortcuts (⌘/Ctrl + B, I, U, K), and Write / Split / Preview views with a word count. The text is stored as plain formatted text: `## ` heading, `### ` subheading, `**bold**`, `*italic*`, `++underline++`, `[text](https://…)` link, `- ` bullet, `1. ` numbered item, `> ` tip, `---` divider. Pasted `https://` addresses become links automatically. It is displayed safely: HTML typed into it shows as text, and only `http(s)` and `mailto` links are created; they open in a new tab.
 
 ## Content honesty
 

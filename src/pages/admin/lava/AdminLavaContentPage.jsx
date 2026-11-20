@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Eye, Pencil } from 'lucide-react'
+import { Pencil } from 'lucide-react'
 import Card from '@/components/ui/Card'
 import Alert from '@/components/ui/Alert'
 import Skeleton from '@/components/ui/Skeleton'
@@ -7,8 +7,8 @@ import Badge from '@/components/ui/Badge'
 import Modal from '@/components/ui/Modal'
 import Input from '@/components/ui/Input'
 import Button from '@/components/ui/Button'
-import RichText from '@/components/lava/RichText'
-import { FORMAT_HINT, Select, TextArea } from '@/components/lava/AdminFields'
+import RichTextEditor from '@/components/lava/RichTextEditor'
+import { Select } from '@/components/lava/AdminFields'
 import { useAsync } from '@/hooks/useAsync'
 import { useAuth } from '@/hooks/useAuth'
 import { useToast } from '@/hooks/useToast'
@@ -24,7 +24,6 @@ const hasPlaceholders = (body) => /\[[^\]]+\]|DRAFT FOR ADMINISTRATOR REVIEW/.te
 function ContentModal({ row, onClose, onSaved }) {
   const { user } = useAuth()
   const [form, setForm] = useState({ title: row.title, body: row.body, status: row.status })
-  const [preview, setPreview] = useState(false)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   const publishingPlaceholders = form.status === 'published' && hasPlaceholders(form.body)
@@ -37,7 +36,7 @@ function ContentModal({ row, onClose, onSaved }) {
   }
 
   return (
-    <Modal open onClose={saving ? undefined : onClose} title={`Edit: ${row.title}`} description={WHERE[row.key]} footer={
+    <Modal open size="xl" onClose={saving ? undefined : onClose} title={`Edit: ${row.title}`} description={WHERE[row.key]} footer={
       <>
         <Button variant="secondary" onClick={onClose} disabled={saving}>Cancel</Button>
         <Button onClick={save} loading={saving}>Save</Button>
@@ -46,10 +45,7 @@ function ContentModal({ row, onClose, onSaved }) {
       <div className="space-y-4">
         {error && <Alert type="error">{error}</Alert>}
         <Input label="Title" maxLength={120} value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} />
-        <div className="flex justify-end"><button type="button" onClick={() => setPreview((p) => !p)} className="inline-flex items-center gap-1 text-xs font-medium text-navy-700"><Eye className="h-3.5 w-3.5" /> {preview ? 'Edit text' : 'Preview'}</button></div>
-        {preview
-          ? <div className="max-h-80 overflow-y-auto rounded-lg bg-slate-50 p-4"><RichText text={form.body} /></div>
-          : <TextArea label="Content" rows={12} maxLength={20000} value={form.body} onChange={(e) => setForm({ ...form, body: e.target.value })} hint={FORMAT_HINT} />}
+        <RichTextEditor label="Content" rows={16} maxLength={20000} value={form.body} onChange={(body) => setForm((f) => ({ ...f, body }))} />
         <Select label="Visibility" value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })} options={[['draft', 'Draft: only admins can see it'], ['published', 'Published: visible to members']]} />
         {publishingPlaceholders && <Alert type="error">This text still contains [placeholders] or the draft note. Replace them with verified information before publishing.</Alert>}
       </div>

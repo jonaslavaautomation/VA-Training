@@ -9,9 +9,9 @@ import Modal from '@/components/ui/Modal'
 import Input from '@/components/ui/Input'
 import Button from '@/components/ui/Button'
 import EmptyState from '@/components/ui/EmptyState'
-import RichText from '@/components/lava/RichText'
+import RichTextEditor from '@/components/lava/RichTextEditor'
 import LessonMaterialsModal from '@/components/lava/LessonMaterialsModal'
-import { ConfirmDelete, FORMAT_HINT, TextArea } from '@/components/lava/AdminFields'
+import { ConfirmDelete } from '@/components/lava/AdminFields'
 import { useAsync } from '@/hooks/useAsync'
 import { useToast } from '@/hooks/useToast'
 import { deleteLesson, getCourseAdmin, getLessonMaterials, listAttachableResources, saveLesson, swapOrder } from '@/services/lavaService'
@@ -19,7 +19,6 @@ import { toUserMessage } from '@/lib/errors'
 
 function LessonModal({ lesson, courseId, nextOrder, onClose, onSaved }) {
   const [form, setForm] = useState({ title: lesson?.title ?? '', minutes: lesson?.minutes ?? 5, body: lesson?.body ?? '', resource_id: lesson?.resource_id ?? '', sort_order: lesson?.sort_order ?? nextOrder })
-  const [preview, setPreview] = useState(false)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }))
@@ -29,17 +28,17 @@ function LessonModal({ lesson, courseId, nextOrder, onClose, onSaved }) {
     try { onSaved(await saveLesson(lesson?.id, courseId, form), !lesson) } catch (err) { setError(toUserMessage(err)) } finally { setSaving(false) }
   }
   return (
-    <Modal open onClose={saving ? undefined : onClose} title={lesson ? 'Edit lesson' : 'New lesson'} footer={
+    <Modal open size="xl" onClose={saving ? undefined : onClose} title={lesson ? 'Edit lesson' : 'New lesson'} footer={
       <><Button variant="secondary" onClick={onClose} disabled={saving}>Cancel</Button><Button onClick={save} loading={saving}>Save lesson</Button></>
     }>
       <div className="space-y-4">
         {error && <Alert type="error">{error}</Alert>}
-        <Input label="Lesson title" maxLength={160} value={form.title} onChange={set('title')} />
-        <Input label="Reading time (minutes)" type="number" min={1} max={240} value={form.minutes} onChange={set('minutes')} />
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-[1fr_12rem]">
+          <Input label="Lesson title" maxLength={160} value={form.title} onChange={set('title')} />
+          <Input label="Reading time (minutes)" type="number" min={1} max={240} value={form.minutes} onChange={set('minutes')} />
+        </div>
         <p className="text-xs text-slate-500">Add videos and PDFs with the <strong>Videos &amp; PDFs</strong> button on the lesson list.</p>
-        <div className="flex justify-end"><button type="button" onClick={() => setPreview((p) => !p)} className="inline-flex items-center gap-1 text-xs font-medium text-navy-700"><Eye className="h-3.5 w-3.5" /> {preview ? 'Edit text' : 'Preview'}</button></div>
-        {preview ? <div className="max-h-96 overflow-y-auto rounded-lg bg-slate-50 p-4"><RichText text={form.body} /></div>
-          : <TextArea label="Lesson text" rows={14} maxLength={40000} value={form.body} onChange={set('body')} hint={FORMAT_HINT} />}
+        <RichTextEditor label="Lesson text" rows={18} maxLength={40000} value={form.body} onChange={(body) => setForm((f) => ({ ...f, body }))} />
       </div>
     </Modal>
   )

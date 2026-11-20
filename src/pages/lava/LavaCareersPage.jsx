@@ -8,6 +8,7 @@ import Badge from '@/components/ui/Badge'
 import EmptyState from '@/components/ui/EmptyState'
 import { LinkButton } from '@/components/ui/Button'
 import { ArrangementNotice, HiringBadge } from '@/components/lava/LavaUi'
+import RichText from '@/components/lava/RichText'
 import { useAsync } from '@/hooks/useAsync'
 import { listPositions } from '@/services/lavaService'
 import { toUserMessage } from '@/lib/errors'
@@ -44,7 +45,7 @@ function PositionCard({ p }) {
             <span><span className="block text-xs text-lava-700">Working arrangement</span><span className="font-medium text-navy-900">{p.work_arrangement}</span></span>
           </div>
         </div>
-        {p.description && <p className="mt-4 whitespace-pre-line text-sm leading-6 text-slate-600">{p.description}</p>}
+        {p.description && <RichText text={p.description} className="mt-4 text-sm leading-6" />}
       </div>
       <button
         type="button"
