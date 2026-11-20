@@ -10,11 +10,12 @@
  * Admin writes are plain table writes allowed by admin-only RLS policies,
  * plus lava_decide_simulator_request for approvals.
  */
-import { supabase, isPreviewMode } from '@/lib/supabase'
+import { supabase, supabaseUrl, isPreviewMode } from '@/lib/supabase'
 import { userError } from '@/lib/errors'
 import { detectContentType, validateUploadFile } from '@/lib/media'
 import { effectiveLimitBytes, UPLOAD_RULES } from '@/config/constants'
 import { beginFileUpload, saveResource } from '@/services/uploadService'
+import { uploadSmall } from '@/services/storageService'
 
 const PREVIEW_MESSAGE = 'The LAVA portal needs a connected Supabase project. Add your keys to .env.local to enable it.'
 const SETUP_MESSAGE = 'The LAVA portal isn’t set up on the database yet. Run the Phase 7A migrations (see DEPLOYMENT_GUIDE.md).'
@@ -302,6 +303,46 @@ export async function saveContent(key, { title, body, status }, userId) {
   guard()
   const rows = await run(supabase.from('lava_content').update({ title: title.trim(), body, status, updated_by: userId }).eq('key', key).select(CONTENT_COLS))
   return rows[0]
+}
+
+/* ----------------------------- pasted photos ----------------------------- */
+
+export const PHOTO_BUCKET = 'lava-images'
+/** Only photos saved in the app's own public photo bucket are ever displayed. */
+export const PHOTO_URL_PREFIX = `${supabaseUrl}/storage/v1/object/public/${PHOTO_BUCKET}/`
+const PHOTO_TYPES = ['image/jpeg', 'image/png', 'image/webp']
+const MAX_EDGE = 1600
+
+/** Shrinks big photos in the browser (max 1600 px, JPEG) so pages stay fast. */
+async function shrink(file) {
+  const bitmap = await createImageBitmap(file)
+  const scale = Math.min(1, MAX_EDGE / Math.max(bitmap.width, bitmap.height))
+  if (scale === 1 && PHOTO_TYPES.includes(file.type) && file.size <= 1.5 * 1024 * 1024) { bitmap.close?.(); return file }
+  const canvas = document.createElement('canvas')
+  canvas.width = Math.round(bitmap.width * scale)
+  canvas.height = Math.round(bitmap.height * scale)
+  const ctx = canvas.getContext('2d')
+  ctx.fillStyle = '#ffffff' // transparent PNGs get a white background in JPEG
+  ctx.fillRect(0, 0, canvas.width, canvas.height)
+  ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height)
+  bitmap.close?.()
+  return new Promise((resolve, reject) => canvas.toBlob((b) => (b ? resolve(b) : reject(new Error('encode failed'))), 'image/jpeg', 0.85))
+}
+
+/**
+ * Saves a pasted / dropped photo and returns its public URL.
+ * No file picker: the editor calls this when an image is pasted.
+ */
+export async function savePastedPhoto(file) {
+  guard()
+  if (!file?.type?.startsWith('image/')) throw userError('Only photos can be pasted here.')
+  let blob
+  try { blob = await shrink(file) } catch { throw userError('This image couldn’t be read. Try copying it again (right-click the photo → Copy Image).') }
+  if (blob.size > 5 * 1024 * 1024) throw userError('This photo is too large (over 5 MB) even after shrinking.')
+  const type = PHOTO_TYPES.includes(blob.type) ? blob.type : 'image/jpeg'
+  const ext = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp' }[type]
+  const { path } = await uploadSmall({ bucket: PHOTO_BUCKET, path: `content/${crypto.randomUUID()}.${ext}`, blob, contentType: type })
+  return supabase.storage.from(PHOTO_BUCKET).getPublicUrl(path).data.publicUrl
 }
 
 /** Removes a company section (members stop seeing it immediately). */

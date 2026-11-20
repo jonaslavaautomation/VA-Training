@@ -1,5 +1,5 @@
 import { useId, useRef, useState } from 'react'
-import { Bold, Columns2, Eye, Heading2, Heading3, Italic, Lightbulb, Link2, List, ListOrdered, Minus, PenLine, Underline } from 'lucide-react'
+import { Bold, Columns2, Eye, Heading2, Heading3, ImagePlus, Italic, Lightbulb, Link2, List, ListOrdered, Minus, PenLine, Underline } from 'lucide-react'
 import RichText from './RichText'
 
 const isMac = typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform)
@@ -73,10 +73,18 @@ const Divider = () => <span className="mx-1 h-5 w-px bg-slate-200" aria-hidden="
  * Formatting editor for lesson text, company sections and job descriptions.
  * Stores plain formatted text (rendered safely by <RichText>), so nothing
  * typed here can inject HTML or scripts.
+ *
+ * `onPastePhoto(file) → Promise<url>` enables photos: paste (⌘V / Ctrl+V) or
+ * drop an image and it is saved automatically and inserted at the cursor.
  */
-export default function RichTextEditor({ label, value, onChange, rows = 14, maxLength = 20000, hint, placeholder }) {
+export default function RichTextEditor({ label, value, onChange, rows = 14, maxLength = 20000, hint, placeholder, onPastePhoto }) {
   const id = useId()
   const ref = useRef(null)
+  const valueRef = useRef(value)
+  valueRef.current = value
+  const [saving, setSaving] = useState(0)
+  const [photoError, setPhotoError] = useState('')
+  const [photoTip, setPhotoTip] = useState(false)
   const [view, setView] = useState('write') // write | preview | split
   const [linkForm, setLinkForm] = useState(null) // { text, url, start, end }
   const [linkError, setLinkError] = useState('')
@@ -122,6 +130,53 @@ export default function RichTextEditor({ label, value, onChange, rows = 14, maxL
     setLinkForm(null)
   }
 
+  function addPhotos(files) {
+    const el = ref.current
+    if (!el || !onPastePhoto || !files.length) return
+    setPhotoError('')
+    const start = el.selectionStart
+    const before = el.value.slice(0, start)
+    const lead = !before || before.endsWith('\n\n') ? '' : before.endsWith('\n') ? '\n' : '\n\n'
+    const tokens = files.map(() => `![Saving photo…](saving:${Math.random().toString(36).slice(2, 10)})`)
+    const text = `${lead}${tokens.join('\n')}\n\n`
+    replaceRange(el, start, el.selectionEnd, text, start + text.length, start + text.length)
+    // Show the photo right away: switch to side-by-side view on wide screens.
+    if (view === 'write' && window.matchMedia?.('(min-width: 768px)').matches) setView('split')
+    files.forEach((file, i) => {
+      setSaving((n) => n + 1)
+      onPastePhoto(file)
+        .then((url) => onChange(valueRef.current.replace(tokens[i], `![Photo](${url})`)))
+        .catch((err) => {
+          onChange(valueRef.current.replace(`${tokens[i]}\n`, '').replace(tokens[i], ''))
+          setPhotoError(err?.userMessage ?? 'The photo couldn’t be saved. Please try again.')
+        })
+        .finally(() => setSaving((n) => n - 1))
+    })
+  }
+
+  const imagesFrom = (list) => [...(list ?? [])].filter((f) => f.type?.startsWith('image/'))
+
+  function onPaste(e) {
+    if (!onPastePhoto) return
+    const files = imagesFrom(e.clipboardData?.files).length ? imagesFrom(e.clipboardData.files)
+      : [...(e.clipboardData?.items ?? [])].filter((it) => it.kind === 'file' && it.type.startsWith('image/')).map((it) => it.getAsFile()).filter(Boolean)
+    if (files.length) { e.preventDefault(); addPhotos(files); return }
+    // Copied a web page selection with a picture but no image data: explain how to copy the photo itself.
+    const html = e.clipboardData?.getData('text/html') ?? ''
+    if (/<img\s/i.test(html) && !e.clipboardData.getData('text/plain').trim()) {
+      e.preventDefault()
+      setPhotoTip(true)
+    }
+  }
+
+  function onDrop(e) {
+    if (!onPastePhoto) return
+    const files = imagesFrom(e.dataTransfer?.files)
+    if (!files.length) return
+    e.preventDefault()
+    addPhotos(files)
+  }
+
   function onKeyDown(e) {
     if (!(e.metaKey || e.ctrlKey) || e.altKey) return
     const k = e.key.toLowerCase()
@@ -152,6 +207,7 @@ export default function RichTextEditor({ label, value, onChange, rows = 14, maxL
           <ToolButton label="Numbered list" icon={ListOrdered} onClick={run((el) => toggleLines(el, 'ol'))} />
           <ToolButton label="Highlighted tip" icon={Lightbulb} onClick={run((el) => toggleLines(el, 'tip'))} />
           <ToolButton label="Divider line" icon={Minus} onClick={divider} />
+          {onPastePhoto && <ToolButton label="How to add a photo" icon={ImagePlus} onClick={() => setPhotoTip((t) => !t)} active={photoTip} />}
           <div className="ml-auto flex rounded-lg bg-white p-0.5 ring-1 ring-slate-200" role="tablist" aria-label="Editor view">
             {[['write', 'Write', PenLine], ['split', 'Split', Columns2], ['preview', 'Preview', Eye]].map(([v, text, Icon]) => (
               <button
@@ -186,6 +242,17 @@ export default function RichTextEditor({ label, value, onChange, rows = 14, maxL
           </form>
         )}
 
+        {photoTip && onPastePhoto && (
+          <div className="flex items-start gap-3 border-b border-slate-200 bg-lava-50/50 px-4 py-3 text-sm text-navy-800" role="note">
+            <ImagePlus className="mt-0.5 h-4 w-4 shrink-0 text-lava-500" />
+            <div className="min-w-0 flex-1">
+              <p className="font-medium text-navy-900">Paste a photo</p>
+              <p className="mt-0.5 text-xs leading-5 text-slate-600">Right-click a photo (for example on lavaautomation.com) and choose <strong>Copy Image</strong>, click where it should go in the text, then press <strong>{isMac ? '⌘V' : 'Ctrl+V'}</strong>. You can also drag a photo in. It’s saved automatically. Photos on lines right after each other show as a gallery; replace the word <em>Photo</em> in <code className="rounded bg-white px-1">![Photo](…)</code> to add a caption.</p>
+            </div>
+            <button type="button" onClick={() => setPhotoTip(false)} className="text-xs font-medium text-slate-500 hover:text-navy-900">Close</button>
+          </div>
+        )}
+
         <div className={`grid ${view === 'split' ? 'md:grid-cols-2 md:divide-x md:divide-slate-200' : 'grid-cols-1'}`}>
           {showEditor && (
             <textarea
@@ -196,6 +263,9 @@ export default function RichTextEditor({ label, value, onChange, rows = 14, maxL
               value={value}
               onChange={(e) => onChange(e.target.value)}
               onKeyDown={onKeyDown}
+              onPaste={onPaste}
+              onDrop={onDrop}
+              onDragOver={(e) => { if (onPastePhoto && [...(e.dataTransfer?.items ?? [])].some((it) => it.type.startsWith('image/'))) e.preventDefault() }}
               placeholder={placeholder}
               spellCheck
               className="block min-h-48 w-full resize-y border-0 px-4 py-3 font-mono text-[13px] leading-6 text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-0"
@@ -209,7 +279,9 @@ export default function RichTextEditor({ label, value, onChange, rows = 14, maxL
         </div>
 
         <div className="flex flex-wrap items-center justify-between gap-2 border-t border-slate-100 bg-slate-50/60 px-3 py-1.5 text-[11px] text-slate-400">
-          <span>{hint ?? 'Select text, then use the toolbar. Links open in a new tab.'}</span>
+          <span className={photoError ? 'text-red-600' : saving ? 'text-lava-600' : ''} role={photoError ? 'alert' : undefined}>
+            {photoError || (saving ? `Saving ${saving} photo${saving === 1 ? '' : 's'}…` : hint ?? (onPastePhoto ? `Select text, then use the toolbar. Paste photos with ${isMac ? '⌘V' : 'Ctrl+V'}.` : 'Select text, then use the toolbar. Links open in a new tab.'))}
+          </span>
           <span>{words} word{words === 1 ? '' : 's'} · {value.length.toLocaleString()}/{maxLength.toLocaleString()}</span>
         </div>
       </div>

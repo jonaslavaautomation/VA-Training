@@ -255,6 +255,23 @@ console.log('\nlesson videos & PDFs (Training Library storage, LAVA-only)')
   await member(A, () => expectError('audience must be library or lava', `insert into public.training_resources (title, resource_type, storage_path, status, audience) values ('x', 'PDF', 'x/y.pdf', 'draft', 'public')`, /audience_check/))
 }
 
+console.log('\npasted photos (lava-images bucket)')
+await as('postgres', null, async () => {
+  const [b] = await q(`select public, file_size_limit, allowed_mime_types from storage.buckets where id = 'lava-images'`)
+  b?.public === true && Number(b.file_size_limit) === 5242880 && b.allowed_mime_types.join() === 'image/jpeg,image/png,image/webp' ? ok('lava-images bucket: public company photos, 5 MB, JPEG/PNG/WebP only') : bad('bucket', JSON.stringify(b))
+})
+await member(A, async () => {
+  await q(`insert into storage.objects (bucket_id, name) values ('lava-images', 'content/a.jpg')`)
+  ok('admins can save photos')
+  await expectRows('admins can remove photos', `delete from storage.objects where bucket_id = 'lava-images' and name = 'content/a.jpg' returning name`, 1)
+})
+await member(M1, async () => {
+  await expectError('members cannot add photos', `insert into storage.objects (bucket_id, name) values ('lava-images', 'content/evil.jpg')`, /row-level security/)
+})
+await as('postgres', null, () => q(`insert into storage.objects (bucket_id, name) values ('lava-images', 'content/keep.jpg')`))
+await member(M1, () => expectRows('members cannot delete photos', `delete from storage.objects where bucket_id = 'lava-images' returning name`, 0))
+await as('anon', null, () => expectError('anonymous visitors cannot write to storage', `insert into storage.objects (bucket_id, name) values ('lava-images', 'x.jpg')`, /permission denied|row-level security/))
+
 console.log('\ninactive accounts')
 await member(M3, () => q(`select public.lava_submit_agreement(true, true, true)`))
 await as('postgres', null, () => q(`update public.profiles set status = 'inactive' where id = $1`, [M3]))

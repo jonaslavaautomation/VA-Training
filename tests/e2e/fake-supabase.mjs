@@ -302,6 +302,12 @@ export function start(port) {
       }
       if (req.method === 'DELETE') { state.tus.delete(m[1]); return send(res, 204, undefined, { 'Tus-Resumable': '1.0.0' }) }
     }
+    // Public buckets (LAVA company photos) are served by plain URL, no token.
+    if ((m = path.match(/^\/storage\/v1\/object\/public\/([^/]+)\/(.+)$/)) && req.method === 'GET') {
+      const obj = m[1] === 'lava-images' && state.objects.get(`${m[1]}/${m[2]}`)
+      if (!obj) return send(res, 400, { statusCode: '404', error: 'not_found', message: 'Object not found' })
+      return send(res, 200, obj.data, { 'Content-Type': obj.type, 'Content-Length': String(obj.data.length) })
+    }
     if ((m = path.match(/^\/storage\/v1\/object\/sign\/([^/]+)$/)) && req.method === 'POST') {
       return send(res, 200, body.paths.map((p) => {
         if (!state.objects.has(`${m[1]}/${p}`) || !canRead(uid, m[1], p)) return { path: p, signedURL: null, error: 'not found' }

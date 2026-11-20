@@ -12,7 +12,7 @@ import { ConfirmDelete, Select } from '@/components/lava/AdminFields'
 import { useAsync } from '@/hooks/useAsync'
 import { useAuth } from '@/hooks/useAuth'
 import { useToast } from '@/hooks/useToast'
-import { deleteContent, listContentAdmin, restoreContent, saveContent } from '@/services/lavaService'
+import { deleteContent, listContentAdmin, restoreContent, saveContent, savePastedPhoto } from '@/services/lavaService'
 import { toUserMessage } from '@/lib/errors'
 
 const WHERE = {
@@ -58,7 +58,7 @@ function ContentModal({ row, onClose, onSaved }) {
       <div className="space-y-4">
         {error && <Alert type="error">{error}</Alert>}
         <Input label="Title" maxLength={120} value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} />
-        <RichTextEditor label="Content" rows={16} maxLength={20000} value={form.body} onChange={(body) => setForm((f) => ({ ...f, body }))} />
+        <RichTextEditor label="Content" rows={16} maxLength={20000} onPastePhoto={savePastedPhoto} value={form.body} onChange={(body) => setForm((f) => ({ ...f, body }))} />
         <Select label="Visibility" value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })} options={[['draft', 'Draft: only admins can see it'], ['published', 'Published: visible to members']]} />
         {publishingPlaceholders && <Alert type="error">This text still contains [placeholders] or the draft note. Replace them with verified information before publishing.</Alert>}
       </div>

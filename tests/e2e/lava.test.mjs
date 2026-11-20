@@ -172,6 +172,26 @@ try {
     const [row] = await lavaSql(`select status, body from public.lava_content where key = 'clients'`)
     assert(row?.status === 'draft' && row.body === '', JSON.stringify(row))
   })
+  await step('A2c', 'Admin pastes photos into a company section (no upload step) and publishes it', async () => {
+    await admin.getByRole('button', { name: 'Edit Mission and Vision' }).click()
+    const editor = admin.getByLabel('Content')
+    await editor.fill('## Our mission\n\nHelping insurance agencies grow with trained virtual assistants.')
+    await editor.evaluate(async (el) => {
+      const mk = (w, h, color) => new Promise((r) => { const c = document.createElement('canvas'); c.width = w; c.height = h; const x = c.getContext('2d'); x.fillStyle = color; x.fillRect(0, 0, w, h); c.toBlob((b) => r(new File([b], 'lava-photo.png', { type: 'image/png' })), 'image/png') })
+      const dt = new DataTransfer()
+      dt.items.add(await mk(2400, 1600, '#e52724')) // big photo: shrunk to 1600 px before saving
+      dt.items.add(await mk(800, 600, '#22212a'))
+      el.focus(); el.setSelectionRange(el.value.length, el.value.length)
+      el.dispatchEvent(new ClipboardEvent('paste', { clipboardData: dt, bubbles: true, cancelable: true }))
+    })
+    await admin.waitForFunction(() => (document.querySelector('textarea')?.value.match(/!\[Photo\]\(http[^)]+lava-images\/content\/[^)]+\)/g) ?? []).length === 2, null, { timeout: 20000 })
+    await admin.getByRole('tab', { name: 'Preview' }).click()
+    await admin.getByRole('dialog').getByTestId('photo-gallery').locator('img').nth(1).waitFor()
+    await admin.getByRole('tab', { name: 'Write' }).click()
+    await admin.getByLabel('Visibility').selectOption('published')
+    await admin.getByRole('dialog').getByRole('button', { name: 'Save' }).click()
+    await text(admin, 'Section saved.')
+  })
   await step('A3', 'Admin adds a position with confirmed salary and publishes it as hiring', async () => {
     await admin.goto(`${BASE}/admin/lava/positions`)
     await text(admin, 'No positions yet')
@@ -256,6 +276,13 @@ try {
     assert(!(await maria.getByText('DRAFT FOR ADMINISTRATOR REVIEW').count()), 'draft text visible to member')
     assert(!(await maria.getByTestId('lava-section-history').count()), 'draft history section visible')
     await text(maria, 'Back to VA Training Academy dashboard')
+  })
+  await step('4b', 'Member sees the pasted photos as a gallery (big photo shrunk to 1600 px)', async () => {
+    const gallery = maria.getByTestId('lava-section-mission_vision').getByTestId('photo-gallery')
+    await gallery.locator('img').nth(1).waitFor()
+    await maria.waitForFunction(() => [...document.querySelectorAll('[data-testid=lava-section-mission_vision] img')].every((i) => i.complete && i.naturalWidth > 0), null, { timeout: 15000 })
+    const widths = await gallery.locator('img').evaluateAll((imgs) => imgs.map((i) => i.naturalWidth))
+    assert(widths.length === 2 && widths[0] === 1600 && widths[1] === 800, `widths ${widths}`)
   })
   await step(5, 'Member explores the hiring opportunities', async () => {
     await maria.getByRole('link', { name: 'Careers' }).click()

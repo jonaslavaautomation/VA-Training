@@ -14,7 +14,7 @@ import LessonMaterialsModal from '@/components/lava/LessonMaterialsModal'
 import { ConfirmDelete } from '@/components/lava/AdminFields'
 import { useAsync } from '@/hooks/useAsync'
 import { useToast } from '@/hooks/useToast'
-import { deleteLesson, getCourseAdmin, getLessonMaterials, listAttachableResources, saveLesson, swapOrder } from '@/services/lavaService'
+import { deleteLesson, getCourseAdmin, getLessonMaterials, listAttachableResources, saveLesson, swapOrder, savePastedPhoto } from '@/services/lavaService'
 import { toUserMessage } from '@/lib/errors'
 
 function LessonModal({ lesson, courseId, nextOrder, onClose, onSaved }) {
@@ -38,7 +38,7 @@ function LessonModal({ lesson, courseId, nextOrder, onClose, onSaved }) {
           <Input label="Reading time (minutes)" type="number" min={1} max={240} value={form.minutes} onChange={set('minutes')} />
         </div>
         <p className="text-xs text-slate-500">Add videos and PDFs with the <strong>Videos &amp; PDFs</strong> button on the lesson list.</p>
-        <RichTextEditor label="Lesson text" rows={18} maxLength={40000} value={form.body} onChange={(body) => setForm((f) => ({ ...f, body }))} />
+        <RichTextEditor label="Lesson text" rows={18} maxLength={40000} onPastePhoto={savePastedPhoto} value={form.body} onChange={(body) => setForm((f) => ({ ...f, body }))} />
       </div>
     </Modal>
   )

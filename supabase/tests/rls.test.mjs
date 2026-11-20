@@ -242,7 +242,10 @@ await as('postgres', null, async () => {
 console.log('\nstorage buckets')
 await as('postgres', null, async () => {
   const rows = await q(`select id, public, file_size_limit, allowed_mime_types from storage.buckets order by id`)
-  rows.length === 4 && rows.every((b) => b.public === false) ? ok('four private buckets (training ×3 + announcement images)') : bad('buckets', JSON.stringify(rows))
+  const priv = rows.filter((b) => b.id !== 'lava-images')
+  const lava = rows.find((b) => b.id === 'lava-images')
+  priv.length === 4 && priv.every((b) => b.public === false) ? ok('four private buckets (training ×3 + announcement images)') : bad('buckets', JSON.stringify(rows))
+  lava?.public === true && rows.length === 5 ? ok('only the LAVA company-photo bucket is public (intentional)') : bad('public buckets', JSON.stringify(rows))
   const pdf = rows.find((b) => b.id === 'training-pdfs')
   pdf?.file_size_limit == 52428800 && pdf.allowed_mime_types.join() === 'application/pdf' ? ok('PDF bucket: 50 MB, application/pdf only') : bad('pdf bucket', JSON.stringify(pdf))
   const vid = rows.find((b) => b.id === 'training-videos')

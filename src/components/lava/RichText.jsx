@@ -1,5 +1,6 @@
 import { Fragment } from 'react'
-import { Lightbulb } from 'lucide-react'
+import { ImageOff, Lightbulb } from 'lucide-react'
+import { PHOTO_URL_PREFIX } from '@/services/lavaService'
 
 /*
  * Renders the simple text format used by lessons, company sections and job
@@ -8,7 +9,9 @@ import { Lightbulb } from 'lucide-react'
  *   blank line = new paragraph · "## " / "### " headings · "- " bullets
  *   "1. " numbered items · "> " highlighted tip · "---" divider
  *   **bold** · *italic* · ++underline++ · [link text](https://…) · bare https:// links
- * Only http(s) and mailto links are ever turned into links.
+ *   ![caption](photo URL) on its own line = photo; photos on consecutive lines = gallery
+ * Only http(s) and mailto links are ever turned into links, and only photos
+ * saved in the app's own photo bucket (pasted in the editor) are displayed.
  */
 
 const INLINE = [
@@ -46,6 +49,8 @@ export function inline(text, keyPrefix = 'i') {
   return out
 }
 
+const IMAGE_LINE = /^\s*!\[([^\]\n]*)\]\(([^)\s]+)\)\s*$/
+
 export function parseBlocks(source = '') {
   const blocks = []
   let list = null
@@ -57,8 +62,17 @@ export function parseBlocks(source = '') {
     const line = raw.trimEnd()
     const bullet = line.match(/^\s*[-*]\s+(.*)$/)
     const numbered = line.match(/^\s*\d+[.)]\s+(.*)$/)
-    if (!line.trim()) { flushPara(); flushList(); continue }
+    if (!line.trim()) { flushPara(); flushList(); const last = blocks.at(-1); if (last?.type === 'images') last.open = false; continue }
     if (/^\s*(-{3,}|\*{3,})\s*$/.test(line)) { flushPara(); flushList(); blocks.push({ type: 'hr' }); continue }
+    const img = line.match(IMAGE_LINE)
+    if (img) {
+      flushPara(); flushList()
+      const last = blocks.at(-1)
+      const photo = { alt: img[1].trim(), src: img[2] }
+      if (last?.type === 'images' && last.open) last.items.push(photo)
+      else blocks.push({ type: 'images', items: [photo], open: true })
+      continue
+    }
     if (line.startsWith('### ')) { flushPara(); flushList(); blocks.push({ type: 'h3', text: line.slice(4) }); continue }
     if (line.startsWith('## ')) { flushPara(); flushList(); blocks.push({ type: 'h2', text: line.slice(3) }); continue }
     if (line.startsWith('> ')) {
@@ -84,12 +98,47 @@ export function parseBlocks(source = '') {
   return blocks
 }
 
+const isCaption = (alt) => alt && !/^(photo|image|saving photo…?)$/i.test(alt)
+
+function Photo({ item, tile }) {
+  if (item.src.startsWith('saving:')) {
+    return <div className={`flex animate-pulse items-center justify-center rounded-xl bg-slate-100 text-xs text-slate-400 ${tile ? 'aspect-[4/3]' : 'h-48'}`}>Saving photo…</div>
+  }
+  if (!item.src.startsWith(PHOTO_URL_PREFIX)) {
+    return <div className="flex items-center gap-2 rounded-xl bg-slate-50 p-3 text-xs text-slate-400 ring-1 ring-slate-200"><ImageOff className="h-4 w-4" /> Photo not shown (only photos pasted in the editor can be displayed)</div>
+  }
+  return (
+    <figure className="m-0">
+      <a href={item.src} target="_blank" rel="noopener noreferrer" className="block overflow-hidden rounded-xl bg-slate-100 ring-1 ring-slate-200/70" aria-label={isCaption(item.alt) ? `Open photo: ${item.alt}` : 'Open photo'}>
+        <img
+          src={item.src}
+          alt={isCaption(item.alt) ? item.alt : ''}
+          loading="lazy"
+          decoding="async"
+          className={tile ? 'aspect-[4/3] h-full w-full object-cover transition duration-300 hover:scale-[1.02]' : 'h-auto max-h-[34rem] w-full object-cover'}
+        />
+      </a>
+      {isCaption(item.alt) && <figcaption className="mt-1.5 text-center text-xs text-slate-500">{item.alt}</figcaption>}
+    </figure>
+  )
+}
+
+function Photos({ items }) {
+  if (items.length === 1) return <div className="py-1"><Photo item={items[0]} /></div>
+  return (
+    <div className={`grid grid-cols-2 gap-3 py-1 ${items.length >= 3 ? 'sm:grid-cols-3' : ''}`} data-testid="photo-gallery">
+      {items.map((item, j) => <Photo key={j} item={item} tile />)}
+    </div>
+  )
+}
+
 export default function RichText({ text, className = '' }) {
   const blocks = parseBlocks(text)
   return (
     <div className={`space-y-3 text-[15px] leading-7 text-slate-700 ${className}`}>
       {blocks.map((b, i) => {
         if (b.type === 'hr') return <hr key={i} className="my-2 border-slate-200" />
+        if (b.type === 'images') return <Photos key={i} items={b.items} />
         if (b.type === 'h2') return <h2 key={i} className="pt-3 text-lg font-semibold text-navy-900">{inline(b.text)}</h2>
         if (b.type === 'h3') return <h3 key={i} className="pt-1 text-base font-semibold text-navy-900">{inline(b.text)}</h3>
         if (b.type === 'ul') return <ul key={i} className="list-disc space-y-1.5 pl-5 marker:text-lava-500">{b.items.map((t, j) => <li key={j}>{inline(t)}</li>)}</ul>
