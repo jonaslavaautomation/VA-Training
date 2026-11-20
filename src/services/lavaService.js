@@ -304,6 +304,19 @@ export async function saveContent(key, { title, body, status }, userId) {
   return rows[0]
 }
 
+/** Removes a company section (members stop seeing it immediately). */
+export async function deleteContent(key) {
+  guard()
+  await run(supabase.from('lava_content').delete().eq('key', key))
+}
+
+/** Adds a removed company section back as an empty draft. */
+export async function restoreContent(key, title, sortOrder) {
+  guard()
+  const rows = await run(supabase.from('lava_content').insert({ key, title, body: '', status: 'draft', sort_order: sortOrder }).select(CONTENT_COLS))
+  return rows[0]
+}
+
 export async function listPositionsAdmin() {
   guard()
   return (await run(supabase.from('lava_positions').select(POSITION_COLS))).sort(byOrder)

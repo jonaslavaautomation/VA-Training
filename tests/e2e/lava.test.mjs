@@ -161,6 +161,17 @@ try {
     const [row] = await lavaSql(`select status, body from public.lava_content where key = 'overview'`)
     assert(row.status === 'published' && row.body.includes('test copy'), JSON.stringify(row))
   })
+  await step('A2b', 'Admin deletes an unneeded company section and can add it back', async () => {
+    await admin.getByRole('button', { name: 'Delete Clients and Industries We Serve' }).click()
+    await admin.getByRole('dialog').getByRole('button', { name: 'Delete' }).click()
+    await text(admin, '“Clients and Industries We Serve” deleted.')
+    assert(!(await lavaSql(`select 1 from public.lava_content where key = 'clients'`)).length, 'row not deleted')
+    assert(!(await admin.getByRole('button', { name: /Delete Working Arrangement/ }).count()), 'protected section deletable')
+    await admin.getByRole('button', { name: 'Add back Clients and Industries We Serve' }).click()
+    await text(admin, 'added back as an empty draft')
+    const [row] = await lavaSql(`select status, body from public.lava_content where key = 'clients'`)
+    assert(row?.status === 'draft' && row.body === '', JSON.stringify(row))
+  })
   await step('A3', 'Admin adds a position with confirmed salary and publishes it as hiring', async () => {
     await admin.goto(`${BASE}/admin/lava/positions`)
     await text(admin, 'No positions yet')
