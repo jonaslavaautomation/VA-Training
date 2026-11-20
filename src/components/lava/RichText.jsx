@@ -132,6 +132,39 @@ function Photos({ items }) {
   )
 }
 
+/** Splits a body into its text and its photos (for website-style layouts that place photos beside the text). */
+export function extractPhotos(source = '') {
+  const photos = []
+  const text = source
+    .replace(/\r\n/g, '\n')
+    .split('\n')
+    .filter((line) => {
+      const m = line.match(IMAGE_LINE)
+      if (m) photos.push({ alt: m[1].trim(), src: m[2] })
+      return !m
+    })
+    .join('\n')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim()
+  return { text, photos }
+}
+
+/** Large lead photo with the rest as a strip of thumbnails — for the About LAVA page. */
+export function PhotoShowcase({ photos }) {
+  if (!photos.length) return null
+  const [lead, ...rest] = photos
+  return (
+    <div className="space-y-3" data-testid="photo-showcase">
+      <div className="overflow-hidden rounded-3xl shadow-xl shadow-navy-900/10 ring-1 ring-slate-200/70"><Photo item={lead} tile /></div>
+      {rest.length > 0 && (
+        <div className={`grid gap-3 ${rest.length === 1 ? 'grid-cols-1' : rest.length === 2 ? 'grid-cols-2' : 'grid-cols-3'}`}>
+          {rest.map((p, i) => <Photo key={i} item={p} tile />)}
+        </div>
+      )}
+    </div>
+  )
+}
+
 export default function RichText({ text, className = '' }) {
   const blocks = parseBlocks(text)
   return (

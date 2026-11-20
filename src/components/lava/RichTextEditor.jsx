@@ -1,4 +1,4 @@
-import { useId, useRef, useState } from 'react'
+import { useId, useLayoutEffect, useRef, useState } from 'react'
 import { Bold, Columns2, Eye, Heading2, Heading3, ImagePlus, Italic, Lightbulb, Link2, List, ListOrdered, Minus, PenLine, Underline } from 'lucide-react'
 import RichText from './RichText'
 
@@ -85,6 +85,15 @@ export default function RichTextEditor({ label, value, onChange, rows = 14, maxL
   const [saving, setSaving] = useState(0)
   const [photoError, setPhotoError] = useState('')
   const [photoTip, setPhotoTip] = useState(false)
+
+  // The text box grows with its content (no inner scrollbar), so the dialog
+  // scrolls as one page and the sticky toolbar stays reachable.
+  useLayoutEffect(() => {
+    const el = ref.current
+    if (!el) return
+    el.style.height = 'auto'
+    el.style.height = `${Math.max(rows * 24 + 24, el.scrollHeight + 2)}px`
+  })
   const [view, setView] = useState('write') // write | preview | split
   const [linkForm, setLinkForm] = useState(null) // { text, url, start, end }
   const [linkError, setLinkError] = useState('')
@@ -193,8 +202,10 @@ export default function RichTextEditor({ label, value, onChange, rows = 14, maxL
   return (
     <div>
       <label htmlFor={id} className="mb-1.5 block text-sm font-medium text-slate-700">{label}</label>
-      <div className="overflow-hidden rounded-xl border border-slate-200 bg-white focus-within:border-navy-400 focus-within:ring-4 focus-within:ring-navy-100">
-        <div className="flex flex-wrap items-center gap-0.5 border-b border-slate-200 bg-slate-50 px-2 py-1.5" role="toolbar" aria-label="Formatting">
+      <div className="rounded-xl border border-slate-200 bg-white focus-within:border-navy-400 focus-within:ring-4 focus-within:ring-navy-100">
+        {/* Toolbar (and the link / photo panels) stay pinned while the text scrolls. */}
+        <div className="sticky -top-4 z-20 rounded-t-xl bg-slate-50 shadow-[0_1px_0_0_rgb(226_232_240)]" data-testid="editor-toolbar">
+        <div className="flex flex-wrap items-center gap-0.5 rounded-t-xl px-2 py-1.5" role="toolbar" aria-label="Formatting">
           <ToolButton label="Heading" icon={Heading2} onClick={run((el) => toggleLines(el, 'h2'))} />
           <ToolButton label="Subheading" icon={Heading3} onClick={run((el) => toggleLines(el, 'h3'))} />
           <Divider />
@@ -225,7 +236,7 @@ export default function RichTextEditor({ label, value, onChange, rows = 14, maxL
         </div>
 
         {linkForm && (
-          <form onSubmit={insertLink} className="flex flex-col gap-2 border-b border-slate-200 bg-lava-50/50 p-3 sm:flex-row sm:items-end" aria-label="Insert link">
+          <form onSubmit={insertLink} className="flex flex-col gap-2 border-t border-slate-200 bg-lava-50 p-3 sm:flex-row sm:items-end" aria-label="Insert link">
             <label className="flex-1 text-xs font-medium text-slate-600">
               Text to show
               <input autoFocus value={linkForm.text} onChange={(e) => setLinkForm((f) => ({ ...f, text: e.target.value }))} placeholder="e.g. Visit our website" className="mt-1 block h-9 w-full rounded-md border border-slate-200 bg-white px-2.5 text-sm" />
@@ -243,7 +254,7 @@ export default function RichTextEditor({ label, value, onChange, rows = 14, maxL
         )}
 
         {photoTip && onPastePhoto && (
-          <div className="flex items-start gap-3 border-b border-slate-200 bg-lava-50/50 px-4 py-3 text-sm text-navy-800" role="note">
+          <div className="flex items-start gap-3 border-t border-slate-200 bg-lava-50 px-4 py-3 text-sm text-navy-800" role="note">
             <ImagePlus className="mt-0.5 h-4 w-4 shrink-0 text-lava-500" />
             <div className="min-w-0 flex-1">
               <p className="font-medium text-navy-900">Paste a photo</p>
@@ -252,6 +263,8 @@ export default function RichTextEditor({ label, value, onChange, rows = 14, maxL
             <button type="button" onClick={() => setPhotoTip(false)} className="text-xs font-medium text-slate-500 hover:text-navy-900">Close</button>
           </div>
         )}
+
+        </div>
 
         <div className={`grid ${view === 'split' ? 'md:grid-cols-2 md:divide-x md:divide-slate-200' : 'grid-cols-1'}`}>
           {showEditor && (
@@ -268,17 +281,17 @@ export default function RichTextEditor({ label, value, onChange, rows = 14, maxL
               onDragOver={(e) => { if (onPastePhoto && [...(e.dataTransfer?.items ?? [])].some((it) => it.type.startsWith('image/'))) e.preventDefault() }}
               placeholder={placeholder}
               spellCheck
-              className="block min-h-48 w-full resize-y border-0 px-4 py-3 font-mono text-[13px] leading-6 text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-0"
+              className="block min-h-48 w-full resize-none overflow-hidden border-0 bg-transparent px-4 py-3 font-mono text-[13px] leading-6 text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-0"
             />
           )}
           {showPreview && (
-            <div className="max-h-[32rem] min-h-48 overflow-y-auto px-5 py-4" aria-label="Preview">
+            <div className="min-h-48 px-5 py-4" aria-label="Preview">
               {value.trim() ? <RichText text={value} /> : <p className="text-sm text-slate-400">Nothing to preview yet.</p>}
             </div>
           )}
         </div>
 
-        <div className="flex flex-wrap items-center justify-between gap-2 border-t border-slate-100 bg-slate-50/60 px-3 py-1.5 text-[11px] text-slate-400">
+        <div className="flex flex-wrap items-center justify-between gap-2 rounded-b-xl border-t border-slate-100 bg-slate-50/60 px-3 py-1.5 text-[11px] text-slate-400">
           <span className={photoError ? 'text-red-600' : saving ? 'text-lava-600' : ''} role={photoError ? 'alert' : undefined}>
             {photoError || (saving ? `Saving ${saving} photo${saving === 1 ? '' : 's'}…` : hint ?? (onPastePhoto ? `Select text, then use the toolbar. Paste photos with ${isMac ? '⌘V' : 'Ctrl+V'}.` : 'Select text, then use the toolbar. Links open in a new tab.'))}
           </span>

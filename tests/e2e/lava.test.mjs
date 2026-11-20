@@ -192,6 +192,25 @@ try {
     await admin.getByRole('dialog').getByRole('button', { name: 'Save' }).click()
     await text(admin, 'Section saved.')
   })
+  await step('A2d', 'Editor toolbar stays pinned while scrolling through long text', async () => {
+    await admin.getByRole('button', { name: 'Edit Company Origin and History' }).click()
+    const editor = admin.getByLabel('Content')
+    await editor.fill(Array.from({ length: 80 }, (_, i) => `Paragraph ${i + 1} about the company history.`).join('\n\n'))
+    const r = await admin.evaluate(() => {
+      const scroller = document.querySelector('[role=dialog][aria-labelledby] .overflow-y-auto')
+      scroller.scrollTop = scroller.scrollHeight
+      const bar = document.querySelector('[data-testid=editor-toolbar]').getBoundingClientRect()
+      const box = scroller.getBoundingClientRect()
+      return { scrolled: scroller.scrollTop, barTop: bar.top, barBottom: bar.bottom, boxTop: box.top, boxBottom: box.bottom, textareaInner: document.querySelector('[role=dialog] textarea').scrollHeight - document.querySelector('[role=dialog] textarea').clientHeight }
+    })
+    assert(r.scrolled > 500, `dialog did not scroll (${r.scrolled})`)
+    assert(r.barTop >= r.boxTop - 20 && r.barBottom <= r.boxBottom && r.barBottom > r.boxTop, `toolbar not visible: ${JSON.stringify(r)}`)
+    assert(r.textareaInner <= 2, 'text box scrolls on its own instead of growing')
+    await editor.evaluate((el) => { const i = el.value.indexOf('Paragraph 80'); el.focus({ preventScroll: true }); el.setSelectionRange(i, i + 12) })
+    await admin.getByRole('button', { name: 'Bold' }).click()
+    assert((await editor.inputValue()).includes('**Paragraph 80**'), 'bold from pinned toolbar failed')
+    await admin.getByRole('dialog').getByRole('button', { name: 'Cancel' }).click()
+  })
   await step('A3', 'Admin adds a position with confirmed salary and publishes it as hiring', async () => {
     await admin.goto(`${BASE}/admin/lava/positions`)
     await text(admin, 'No positions yet')
@@ -277,8 +296,8 @@ try {
     assert(!(await maria.getByTestId('lava-section-history').count()), 'draft history section visible')
     await text(maria, 'Back to VA Training Academy dashboard')
   })
-  await step('4b', 'Member sees the pasted photos as a gallery (big photo shrunk to 1600 px)', async () => {
-    const gallery = maria.getByTestId('lava-section-mission_vision').getByTestId('photo-gallery')
+  await step('4b', 'Member sees the pasted photos beside the section text, website-style (big photo shrunk to 1600 px)', async () => {
+    const gallery = maria.getByTestId('lava-section-mission_vision').getByTestId('photo-showcase')
     await gallery.locator('img').nth(1).waitFor()
     await maria.waitForFunction(() => [...document.querySelectorAll('[data-testid=lava-section-mission_vision] img')].every((i) => i.complete && i.naturalWidth > 0), null, { timeout: 15000 })
     const widths = await gallery.locator('img').evaluateAll((imgs) => imgs.map((i) => i.naturalWidth))
