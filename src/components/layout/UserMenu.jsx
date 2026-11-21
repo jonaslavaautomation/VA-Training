@@ -4,7 +4,7 @@ import { ChevronDown, GraduationCap, LogOut, ShieldCheck, UserRound } from 'luci
 import Avatar from '@/components/ui/Avatar'
 import { useAuth } from '@/hooks/useAuth'
 
-export default function UserMenu() {
+export default function UserMenu({ dark = false }) {
   const { user, displayName, isAdmin, isPreview, profile, signOut } = useAuth()
   const [open, setOpen] = useState(false)
   const [signingOut, setSigningOut] = useState(false)
@@ -37,17 +37,18 @@ export default function UserMenu() {
     <div className="relative" ref={ref}>
       <button
         onClick={() => setOpen((o) => !o)}
-        className="flex items-center gap-2 rounded-lg p-1 pr-2 hover:bg-slate-100"
+        className={`flex items-center gap-2 rounded-lg p-1 pr-2 ${dark ? 'hover:bg-white/10' : 'hover:bg-slate-100'}`}
         aria-haspopup="menu"
         aria-expanded={open}
+        aria-label="Account menu"
       >
         <Avatar name={displayName} src={profile?.avatar_url} size="sm" />
-        <span className="hidden max-w-[10rem] truncate text-sm font-medium text-slate-700 sm:block">{displayName}</span>
-        <ChevronDown className="hidden h-4 w-4 text-slate-400 sm:block" />
+        <span className={`hidden max-w-[10rem] truncate text-sm font-medium sm:block ${dark ? 'text-white' : 'text-slate-700'}`}>{displayName}</span>
+        <ChevronDown className={`hidden h-4 w-4 sm:block ${dark ? 'text-navy-300' : 'text-slate-400'}`} />
       </button>
 
       {open && (
-        <div role="menu" className="absolute right-0 mt-2 w-64 overflow-hidden rounded-xl bg-white shadow-lg ring-1 ring-slate-200">
+        <div role="menu" className="absolute right-0 z-40 mt-2 w-64 overflow-hidden rounded-xl bg-white shadow-xl ring-1 ring-slate-200">
           <div className="border-b border-slate-100 px-4 py-3">
             <p className="truncate text-sm font-semibold text-navy-900">{displayName}</p>
             <p className="truncate text-xs text-slate-500">{user?.email}</p>

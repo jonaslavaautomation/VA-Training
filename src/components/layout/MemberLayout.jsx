@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom'
 import { ShieldCheck } from 'lucide-react'
 import DashboardShell from './DashboardShell'
-import { memberNavigation, memberTabs } from '@/config/navigation'
+import { memberNavigation, memberTabs, memberTopNav } from '@/config/navigation'
 import MobileTabBar from './MobileTabBar'
 import { useAuth } from '@/hooks/useAuth'
 
@@ -21,6 +21,9 @@ export default function MemberLayout() {
   return (
     <DashboardShell
       navigation={memberNavigation}
+      topNav={memberTopNav}
+      homeTo="/dashboard"
+      switchLink={isAdmin ? { to: '/admin', label: 'Admin console', icon: ShieldCheck } : null}
       sidebarFooter={footer}
       searchPath="/library"
       searchPlaceholder="Search training resources…"

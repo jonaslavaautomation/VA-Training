@@ -35,6 +35,8 @@ New members create their own account on the sign-in page, or an administrator cr
 - **Activity Logs:** a record of who did what, including every sign-in (recorded by the server).
 - **LAVA Applicant Management** (`/admin/lava`): edit company information (drafts until published), manage positions and salaries, courses and lessons (**upload videos and PDFs for each lesson**), assessments and questions, view applicants' agreements and progress, and approve or reject simulator access with a note.
 
+**Layout:** website-style header with the main menu across the top (grouped items open as dropdowns), search and account menu on the right, and centered page content. Phones and tablets use a menu button (navigation drawer) and, for members, a bottom tab bar.
+
 **Security:**
 - Every rule is enforced by the database (Row Level Security), not just by hiding buttons.
 - Files are in private storage and opened through links that expire.

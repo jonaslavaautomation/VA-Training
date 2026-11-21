@@ -1,6 +1,7 @@
 import { Fragment, useEffect, useId, useRef, useState } from 'react'
 import { Code2, ImageOff, Lightbulb, VideoOff } from 'lucide-react'
 import { PHOTO_URL_PREFIX } from '@/services/lavaService'
+import Lightbox from './Lightbox'
 
 /*
  * Renders the simple text format used by lessons, company sections and job
@@ -133,7 +134,19 @@ export function parseBlocks(source = '') {
 
 const isCaption = (alt) => alt && !/^(photo|image|saving photo…?)$/i.test(alt)
 
-function Photo({ item, tile }) {
+const viewable = (item) => item.src.startsWith(PHOTO_URL_PREFIX)
+const toSlides = (items) => items.filter(viewable).map((p) => ({ src: p.src, caption: isCaption(p.alt) ? p.alt : '' }))
+
+/** Lightbox state for a group of photos: open(item) shows it full-screen among the group's photos. */
+function useLightbox(items) {
+  const [index, setIndex] = useState(null)
+  const slides = toSlides(items)
+  const open = (item) => setIndex(Math.max(0, slides.findIndex((s) => s.src === item.src)))
+  const viewer = index === null ? null : <Lightbox photos={slides} index={index} onIndex={setIndex} onClose={() => setIndex(null)} />
+  return { open, viewer }
+}
+
+function Photo({ item, tile, onOpen }) {
   if (item.src.startsWith('saving:')) {
     return <div className={`flex animate-pulse items-center justify-center rounded-xl bg-slate-100 text-xs text-slate-400 ${tile ? 'aspect-[4/3]' : 'h-48'}`}>Saving photo…</div>
   }
@@ -142,25 +155,27 @@ function Photo({ item, tile }) {
   }
   return (
     <figure className="m-0">
-      <a href={item.src} target="_blank" rel="noopener noreferrer" className="block overflow-hidden rounded-xl bg-slate-100 ring-1 ring-slate-200/70" aria-label={isCaption(item.alt) ? `Open photo: ${item.alt}` : 'Open photo'}>
+      <button type="button" onClick={() => onOpen?.(item)} className="group block w-full cursor-zoom-in overflow-hidden rounded-xl bg-slate-100 ring-1 ring-slate-200/70" aria-label={isCaption(item.alt) ? `View photo: ${item.alt}` : 'View photo full screen'}>
         <img
           src={item.src}
           alt={isCaption(item.alt) ? item.alt : ''}
           loading="lazy"
           decoding="async"
-          className={tile ? 'aspect-[4/3] h-full w-full object-cover transition duration-300 hover:scale-[1.02]' : 'h-auto max-h-[34rem] w-full object-cover'}
+          className={tile ? 'aspect-[4/3] h-full w-full object-cover transition duration-300 group-hover:scale-[1.03]' : 'h-auto max-h-[34rem] w-full object-cover transition duration-300 group-hover:scale-[1.01]'}
         />
-      </a>
+      </button>
       {isCaption(item.alt) && <figcaption className="mt-1.5 text-center text-xs text-slate-500">{item.alt}</figcaption>}
     </figure>
   )
 }
 
 function Photos({ items }) {
-  if (items.length === 1) return <div className="py-1"><Photo item={items[0]} /></div>
+  const { open, viewer } = useLightbox(items)
+  if (items.length === 1) return <div className="py-1"><Photo item={items[0]} onOpen={open} />{viewer}</div>
   return (
     <div className={`grid grid-cols-2 gap-3 py-1 ${items.length >= 3 ? 'sm:grid-cols-3' : ''}`} data-testid="photo-gallery">
-      {items.map((item, j) => <Photo key={j} item={item} tile />)}
+      {items.map((item, j) => <Photo key={j} item={item} tile onOpen={open} />)}
+      {viewer}
     </div>
   )
 }
@@ -199,13 +214,13 @@ export function VideoEmbed({ title, src }) {
 export function CustomCode({ html }) {
   const frameRef = useRef(null)
   const token = useId()
-  const [height, setHeight] = useState(80)
+  const [height, setHeight] = useState(24)
   useEffect(() => {
     function onMessage(e) {
       const frame = frameRef.current
       if (!frame || e.source !== frame.contentWindow || !e.data) return
       if (e.data.type === 'lava-embed-ready') frame.contentWindow.postMessage({ type: 'lava-embed-code', token, html }, '*')
-      if (e.data.type === 'lava-embed-height' && e.data.token === token) setHeight(Math.min(Math.max(Number(e.data.height) || 0, 24), 4000))
+      if (e.data.type === 'lava-embed-height' && e.data.token === token) setHeight(Math.min(Math.max(Number(e.data.height) || 0, 1), 6000))
     }
     window.addEventListener('message', onMessage)
     return () => window.removeEventListener('message', onMessage)
@@ -247,18 +262,39 @@ export function extractPhotos(source = '') {
 
 /** Large lead photo with the rest as a strip of thumbnails — for the About LAVA page. */
 export function PhotoShowcase({ photos }) {
+  const { open, viewer } = useLightbox(photos)
   if (!photos.length) return null
+  if (photos.length === 2) {
+    return (
+      <div className="grid grid-cols-2 gap-3" data-testid="photo-showcase">
+        {photos.map((p, i) => <div key={i} className="overflow-hidden rounded-3xl shadow-xl shadow-navy-900/10 ring-1 ring-slate-200/70"><Photo item={p} tile onOpen={open} /></div>)}
+        {viewer}
+      </div>
+    )
+  }
   const [lead, ...rest] = photos
   return (
     <div className="space-y-3" data-testid="photo-showcase">
-      <div className="overflow-hidden rounded-3xl shadow-xl shadow-navy-900/10 ring-1 ring-slate-200/70"><Photo item={lead} tile /></div>
+      <div className="overflow-hidden rounded-3xl shadow-xl shadow-navy-900/10 ring-1 ring-slate-200/70"><Photo item={lead} tile onOpen={open} /></div>
       {rest.length > 0 && (
         <div className={`grid gap-3 ${rest.length === 1 ? 'grid-cols-1' : rest.length === 2 ? 'grid-cols-2' : 'grid-cols-3'}`}>
-          {rest.map((p, i) => <Photo key={i} item={p} tile />)}
+          {rest.map((p, i) => <Photo key={i} item={p} tile onOpen={open} />)}
         </div>
       )}
+      {viewer}
     </div>
   )
+}
+
+/** Pulls custom-code blocks out of a body (the About page shows them full width under the section). */
+export function extractCode(source = '') {
+  const codes = []
+  const text = source
+    .replace(/\r\n/g, '\n')
+    .replace(/^[ \t]*:::(?:html|code)[ \t]*\n([\s\S]*?)\n[ \t]*:::[ \t]*$/gim, (_, html) => { codes.push(html); return '' })
+    .replace(/\n{3,}/g, '\n\n')
+    .trim()
+  return { text, codes }
 }
 
 export default function RichText({ text, className = '' }) {

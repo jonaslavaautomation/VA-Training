@@ -132,7 +132,7 @@ try {
   console.log('\nadmin prepares company information and positions')
   await step('A1', 'Admin logs in and opens LAVA Applicant Management', async () => {
     await login(admin, 'admin@academy.test', 'Admin123!'); await url(admin, '/admin')
-    await admin.getByRole('link', { name: 'Applicant Management' }).first().click()
+    await admin.locator('header').getByRole('link', { name: 'LAVA Applicants' }).click() // top menu
     await url(admin, '/admin/lava'); await text(admin, 'LAVA Applicant Management')
     await text(admin, '6 company sections are still a draft')
   })
@@ -238,8 +238,9 @@ var arr = [1, 2]; document.getElementById('out').textContent = t + ' / ' + arr[0
     await admin.getByLabel('Visibility').selectOption('published')
     assert(!(await admin.getByText(/still contains \[placeholders\]|Replace them with verified/).count()), 'code brackets flagged as placeholders')
     await admin.getByRole('dialog').getByRole('button', { name: 'Save' }).click()
-    await text(admin, 'Section saved.')
+    await admin.getByRole('dialog').waitFor({ state: 'detached' }) // a "Section saved." toast from the previous step may still be showing
     const row = admin.getByTestId('content-row').filter({ hasText: 'What Does LAVA Do?' })
+    await row.getByText('Published').waitFor()
     assert(!(await row.getByText('Needs review').count()), 'custom code flagged as needing review')
   })
   await step('A3', 'Admin adds a position with confirmed salary and publishes it as hiring', async () => {
@@ -304,12 +305,12 @@ var arr = [1, 2]; document.getElementById('out').textContent = t + ' / ' + arr[0
     await text(maria, 'Coming soon')
   })
   await step('2b', '"Explore VA Niches" opens the future-development placeholder', async () => {
-    await maria.getByRole('link', { name: /Explore VA Niches/ }).first().click()
+    await maria.locator('main').getByRole('link', { name: /Explore VA Niches/ }).first().click()
     await url(maria, '/explore-niches'); await text(maria, 'coming soon')
     await maria.goto(`${BASE}/dashboard`)
   })
   await step(3, 'Member selects "I Want to Apply to LAVA Automation"', async () => {
-    await maria.getByRole('link', { name: /Explore LAVA Opportunities/ }).first().click()
+    await maria.locator('main').getByRole('link', { name: /Explore LAVA Opportunities/ }).first().click()
     await url(maria, '/lava-portal')
   })
   await step(4, 'Member reads the LAVA introduction (published section only; drafts hidden)', async () => {
@@ -333,6 +334,19 @@ var arr = [1, 2]; document.getElementById('out').textContent = t + ' / ' + arr[0
     await maria.waitForFunction(() => [...document.querySelectorAll('[data-testid=lava-section-mission_vision] img')].every((i) => i.complete && i.naturalWidth > 0), null, { timeout: 15000 })
     const widths = await gallery.locator('img').evaluateAll((imgs) => imgs.map((i) => i.naturalWidth))
     assert(widths.length === 2 && widths[0] === 1600 && widths[1] === 800, `widths ${widths}`)
+    // Clicking a photo opens the full-screen viewer in the app (no new tab)
+    const pagesBefore = maria.context().pages().length
+    const before = maria.url()
+    await gallery.getByRole('button').first().click()
+    const viewer = maria.getByTestId('lightbox')
+    await viewer.waitFor()
+    await text(maria, '1 / 2')
+    await viewer.getByRole('button', { name: 'Next photo' }).click()
+    await text(maria, '2 / 2')
+    await maria.keyboard.press('ArrowRight'); await text(maria, '1 / 2')
+    await maria.keyboard.press('Escape')
+    await viewer.waitFor({ state: 'detached' })
+    assert(maria.url() === before && maria.context().pages().length === pagesBefore, 'photo opened a new page or tab')
   })
   await step('4c', 'Member sees the video player and the custom code running in an isolated box', async () => {
     const sec = maria.getByTestId('lava-section-services')
@@ -343,7 +357,8 @@ var arr = [1, 2]; document.getElementById('out').textContent = t + ' / ' + arr[0
     const sandbox = await frame.getAttribute('sandbox')
     assert(/allow-scripts/.test(sandbox) && !/allow-same-origin/.test(sandbox), `sandbox ${sandbox}`)
     await maria.frameLocator('[data-testid=lava-section-services] [data-testid=custom-code]').getByText('Script ran / isolated / no storage / 1').waitFor({ timeout: 15000 })
-    await maria.waitForFunction(() => document.querySelector('[data-testid=lava-section-services] [data-testid=custom-code]').getBoundingClientRect().height >= 40, null, { timeout: 10000 })
+    await maria.waitForFunction(() => { const h = document.querySelector('[data-testid=lava-section-services] [data-testid=custom-code]').getBoundingClientRect().height; return h >= 40 && h <= 90 }, null, { timeout: 10000 }) // fits its content: no empty gap
+    assert(await sec.getByTestId('section-custom-code').count() === 1, 'custom code not shown full width under the section')
     const res = await fetch(`${BASE}/embed.html`)
     assert(/frame-ancestors 'self'/.test(res.headers.get('content-security-policy')) && res.headers.get('x-frame-options') === 'SAMEORIGIN', 'embed headers')
     const main = await fetch(`${BASE}/lava-portal`)
@@ -391,6 +406,7 @@ var arr = [1, 2]; document.getElementById('out').textContent = t + ' / ' + arr[0
     assert(p.role === 'member', 'role changed')
     await maria.getByRole('link', { name: 'Go to the Preparation Center' }).click()
     await url(maria, '/lava-portal/courses'); await text(maria, 'LAVA Preparation Center')
+    await maria.getByTestId('course-card').nth(5).waitFor()
     assert(await maria.getByTestId('course-card').count() === 6, 'expected 6 courses')
   })
 
@@ -594,11 +610,11 @@ var arr = [1, 2]; document.getElementById('out').textContent = t + ' / ' + arr[0
     assert(await card.locator('img[alt="LAVA Automation"]').evaluate((img) => img.complete && img.naturalWidth > 0), 'card logo')
     assert(await card.evaluate((c) => getComputedStyle(c).backgroundColor) === 'rgb(34, 33, 42)', 'card background')
     const brand = await maria.evaluate(() => {
-      const aside = document.querySelector('aside')
-      const marker = aside.querySelector('a[aria-current="page"] > span[aria-hidden="true"]')
-      return { sidebar: getComputedStyle(aside).backgroundColor, marker: marker && getComputedStyle(marker).backgroundColor, font: getComputedStyle(document.body).fontFamily }
+      const header = document.querySelector('header')
+      const marker = header.querySelector('nav[aria-label="Main"] a[aria-current="page"] > span[aria-hidden="true"]')
+      return { sidebar: getComputedStyle(header).backgroundColor, marker: marker && getComputedStyle(marker).backgroundColor, font: getComputedStyle(document.body).fontFamily }
     })
-    assert(brand.sidebar === 'rgb(34, 33, 42)', `sidebar ${brand.sidebar}`)
+    assert(brand.sidebar === 'rgb(34, 33, 42)', `header ${brand.sidebar}`)
     assert(brand.marker === 'rgb(229, 39, 36)', `active nav marker ${brand.marker}`)
     assert(/Poppins/.test(brand.font), `font ${brand.font}`)
   })

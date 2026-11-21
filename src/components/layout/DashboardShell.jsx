@@ -1,12 +1,16 @@
 import { Suspense, useEffect, useState } from 'react'
 import { Outlet, useLocation } from 'react-router-dom'
 import Sidebar from './Sidebar'
-import Topbar from './Topbar'
+import SiteHeader from './SiteHeader'
 import PreviewBanner from './PreviewBanner'
 import Spinner from '@/components/ui/Spinner'
 
-/** Shared frame (sidebar + topbar + content) used by AdminLayout and MemberLayout. */
-export default function DashboardShell({ navigation, subtitle, sidebarFooter, searchPath, searchPlaceholder, bottomNav }) {
+/**
+ * Shared frame used by AdminLayout and MemberLayout: website-style header with
+ * the main menu across the top, centered page content, and a navigation
+ * drawer (plus optional bottom tab bar) on phones and tablets.
+ */
+export default function DashboardShell({ navigation, topNav, homeTo, switchLink, subtitle, sidebarFooter, searchPath, searchPlaceholder, bottomNav }) {
   const [mobileOpen, setMobileOpen] = useState(false)
   const location = useLocation()
 
@@ -26,8 +30,16 @@ export default function DashboardShell({ navigation, subtitle, sidebarFooter, se
         mobileOpen={mobileOpen}
         onClose={() => setMobileOpen(false)}
       />
-      <div className="lg:pl-64">
-        <Topbar onMenuClick={() => setMobileOpen(true)} searchPath={searchPath} searchPlaceholder={searchPlaceholder} />
+      <div>
+        <SiteHeader
+          topNav={topNav}
+          homeTo={homeTo}
+          subtitle={subtitle}
+          switchLink={switchLink}
+          onMenuClick={() => setMobileOpen(true)}
+          searchPath={searchPath}
+          searchPlaceholder={searchPlaceholder}
+        />
         <PreviewBanner />
         <main className={`mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 lg:px-8 lg:py-8 ${bottomNav ? 'pb-24 lg:pb-8' : ''}`}>
           <Suspense

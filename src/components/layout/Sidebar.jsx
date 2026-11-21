@@ -88,15 +88,12 @@ function SidebarContent({ sections, subtitle, footer, onNavigate }) {
   )
 }
 
+/** Navigation drawer for phones and tablets. */
 export default function Sidebar({ mobileOpen, onClose, ...contentProps }) {
   return (
     <>
-      <aside className="fixed inset-y-0 left-0 z-30 hidden w-64 border-t-[3px] border-lava-500 bg-navy-900 lg:block">
-        <SidebarContent {...contentProps} />
-      </aside>
-
-      {/* Mobile / tablet drawer */}
-      <div className={`fixed inset-0 z-40 lg:hidden ${mobileOpen ? '' : 'pointer-events-none invisible'}`}>
+      {/* Phone / tablet navigation drawer (wide screens use the top menu in the header) */}
+      <div className={`fixed inset-0 z-40 xl:hidden ${mobileOpen ? '' : 'pointer-events-none invisible'}`}>
         <div
           className={`absolute inset-0 bg-navy-950/50 backdrop-blur-sm transition-opacity ${mobileOpen ? 'opacity-100' : 'opacity-0'}`}
           onClick={onClose}

@@ -1,12 +1,15 @@
 import { Link } from 'react-router-dom'
 import { GraduationCap } from 'lucide-react'
 import DashboardShell from './DashboardShell'
-import { adminNavigation } from '@/config/navigation'
+import { adminNavigation, adminTopNav } from '@/config/navigation'
 
 export default function AdminLayout() {
   return (
     <DashboardShell
       navigation={adminNavigation}
+      topNav={adminTopNav}
+      homeTo="/admin"
+      switchLink={{ to: '/dashboard', label: 'Member portal', icon: GraduationCap }}
       subtitle="Admin Console"
       sidebarFooter={
         <Link to="/dashboard" className="flex items-center gap-2 rounded-xl bg-white/5 p-3 text-sm font-medium text-navy-100 hover:bg-white/10">

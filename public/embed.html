@@ -17,7 +17,7 @@
     html, body { margin: 0; padding: 0; background: transparent; }
     body { font-family: "Poppins", ui-sans-serif, system-ui, sans-serif; color: #334155; font-size: 15px; line-height: 1.6; overflow: hidden; }
     img, video, iframe { max-width: 100%; }
-    #root { padding: 2px; }
+    #root { display: flow-root; } /* contains child margins so the measured height is exact */
   </style>
 </head>
 <body>
@@ -28,7 +28,8 @@
       var token = null
       function report() {
         if (!token) return
-        var h = Math.ceil(Math.max(document.documentElement.scrollHeight, document.body.scrollHeight, root.getBoundingClientRect().height + 4))
+        // Measure the content only (documentElement.scrollHeight never shrinks below the frame's current height).
+        var h = Math.ceil(root.getBoundingClientRect().height)
         parent.postMessage({ type: 'lava-embed-height', token: token, height: h }, '*')
       }
       window.addEventListener('message', function (e) {
@@ -38,7 +39,7 @@
         var frag = document.createRange().createContextualFragment(String(e.data.html || ''))
         root.appendChild(frag)
         report()
-        if (window.ResizeObserver) new ResizeObserver(report).observe(document.body)
+        if (window.ResizeObserver) new ResizeObserver(report).observe(root)
         window.addEventListener('load', report)
         setTimeout(report, 300); setTimeout(report, 1500); setTimeout(report, 4000)
       })

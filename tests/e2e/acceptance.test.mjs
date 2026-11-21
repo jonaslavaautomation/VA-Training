@@ -70,7 +70,8 @@ async function login(page, email, pw) {
   await page.getByRole('button', { name: 'Sign in' }).click()
 }
 async function logout(page) {
-  await page.locator('aside').first().getByRole('button', { name: 'Log out' }).click()
+  await page.getByRole('button', { name: 'Account menu' }).click()
+  await page.getByRole('menuitem', { name: 'Sign out' }).click()
   await url(page, '/login')
 }
 

@@ -77,3 +77,41 @@ export const adminNavigation = [
     items: [{ action: 'logout', label: 'Log out', icon: LogOut }],
   },
 ]
+
+/*
+ * Top navigation (desktop ≥1280px). Items with `items` open a dropdown.
+ * The sidebar sections above are still used for the phone/tablet menu drawer.
+ */
+export const memberTopNav = [
+  { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+  {
+    label: 'Library',
+    icon: Library,
+    items: [
+      { to: '/library', label: 'Training Library', icon: Library, description: 'Every video lesson and PDF guide' },
+      { to: '/library?type=VIDEO', label: 'Video Library', icon: PlayCircle, description: 'Step-by-step video lessons' },
+      { to: '/library?type=PDF', label: 'PDF Library', icon: FileText, description: 'Guides, templates and checklists' },
+    ],
+  },
+  { to: '/lava-portal', label: 'LAVA Automation', icon: Briefcase },
+  { to: '/explore-niches', label: 'VA Niches', icon: Compass },
+  { to: '/my-learning', label: 'My Learning', icon: GraduationCap },
+  { to: '/favorites', label: 'Favorites', icon: Heart },
+]
+
+export const adminTopNav = [
+  { to: '/admin', label: 'Dashboard', icon: LayoutDashboard, end: true },
+  { to: '/admin/members', label: 'Members', icon: Users },
+  {
+    label: 'Content',
+    icon: FolderOpen,
+    items: [
+      { to: '/admin/resources', label: 'Training Resources', icon: FolderOpen, description: 'Edit, publish and replace files' },
+      { to: '/admin/upload', label: 'Upload Materials', icon: Upload, description: 'Add new videos and PDFs' },
+      { to: '/admin/categories', label: 'Categories', icon: FolderTree, description: 'Organize the library' },
+      { to: '/admin/announcements', label: 'Announcements', icon: Megaphone, description: 'News for members' },
+    ],
+  },
+  { to: '/admin/lava', label: 'LAVA Applicants', icon: Briefcase },
+  { to: '/admin/activity', label: 'Activity Logs', icon: Activity },
+]

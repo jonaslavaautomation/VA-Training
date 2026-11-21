@@ -4,7 +4,7 @@ import Alert from '@/components/ui/Alert'
 import Skeleton from '@/components/ui/Skeleton'
 import Badge from '@/components/ui/Badge'
 import { LinkButton } from '@/components/ui/Button'
-import RichText, { extractPhotos, PhotoShowcase } from '@/components/lava/RichText'
+import RichText, { CustomCode, extractCode, extractPhotos, PhotoShowcase } from '@/components/lava/RichText'
 import { ArrangementNotice } from '@/components/lava/LavaUi'
 import { useAsync } from '@/hooks/useAsync'
 import { useAuth } from '@/hooks/useAuth'
@@ -30,7 +30,9 @@ const BAND = '-mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8'
  */
 function CompanySection({ index, eyebrow, row, isAdmin }) {
   const headingId = `lava-h-${row.key}`
-  const { text, photos } = extractPhotos(row.body)
+  // Custom code is shown full width under the section; photos sit beside the text.
+  const { text: withoutCode, codes } = extractCode(row.body)
+  const { text, photos } = extractPhotos(withoutCode)
   const flip = index % 2 === 1
   const heading = (
     <div>
@@ -59,10 +61,17 @@ function CompanySection({ index, eyebrow, row, isAdmin }) {
             </div>
             <div className={flip ? 'lg:order-1' : ''}><PhotoShowcase photos={photos} /></div>
           </div>
-        ) : (
+        ) : body ? (
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-12 lg:gap-16">
             <div className="lg:col-span-4">{heading}</div>
             <div className="lg:col-span-8">{body}</div>
+          </div>
+        ) : (
+          heading
+        )}
+        {codes.length > 0 && (
+          <div className="mt-8 space-y-8 sm:mt-10" data-testid="section-custom-code">
+            {codes.map((html, i) => <CustomCode key={i} html={html} />)}
           </div>
         )}
       </div>
