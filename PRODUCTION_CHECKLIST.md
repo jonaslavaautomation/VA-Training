@@ -19,7 +19,7 @@ Each item links to the step that explains it ([DEPLOYMENT_GUIDE.md](DEPLOYMENT_G
 - [ ] **Confirm email = OFF** (instant access, your choice) — DG §5
 - [ ] New-account mode chosen: open (default) or approval (`new_account_status = 'inactive'`) — DG §5
 - [ ] Test: create an account on the live site; you're signed in right away; as admin, deactivate then reactivate that account in Admin → Members
-- [ ] `2_lava_portal.sql`, then `3_lava_lesson_materials.sql`, then `4_lava_company_photos.sql` run in SQL Editor — DG §4c
+- [ ] `2_lava_portal.sql`, then `3_lava_lesson_materials.sql`, then `4_lava_company_photos.sql`, then `5_lava_longer_content.sql` run in SQL Editor — DG §4c
 - [ ] Test: upload a video and a PDF to a LAVA lesson; an agreed member can watch/open them; they don't appear in the Training Library
 - [ ] LAVA company sections reviewed: placeholders replaced with verified information, then published (Admin → LAVA Applicants → Company content)
 - [ ] LAVA positions added only with confirmed salary and hiring status

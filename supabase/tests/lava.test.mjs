@@ -272,6 +272,16 @@ await as('postgres', null, () => q(`insert into storage.objects (bucket_id, name
 await member(M1, () => expectRows('members cannot delete photos', `delete from storage.objects where bucket_id = 'lava-images' returning name`, 0))
 await as('anon', null, () => expectError('anonymous visitors cannot write to storage', `insert into storage.objects (bucket_id, name) values ('lava-images', 'x.jpg')`, /permission denied|row-level security/))
 
+console.log('\nlonger content (50,000 characters)')
+await member(A, async () => {
+  await q(`update public.lava_content set body = repeat('x', 50000) where key = 'clients'`)
+  ok('a company section can hold 50,000 characters')
+  await expectError('…but not more', `update public.lava_content set body = repeat('x', 50001) where key = 'clients'`, /lava_content_body_check/)
+  await q(`update public.lava_lessons set body = repeat('y', 50000) where id = $1`, [L])
+  ok('a lesson can hold 50,000 characters')
+  await expectError('…but not more', `update public.lava_lessons set body = repeat('y', 50001) where id = $1`, /lava_lessons_body_check/, [L])
+})
+
 console.log('\ninactive accounts')
 await member(M3, () => q(`select public.lava_submit_agreement(true, true, true)`))
 await as('postgres', null, () => q(`update public.profiles set status = 'inactive' where id = $1`, [M3]))

@@ -19,14 +19,15 @@ supabase/
 │   ├── 20261122100000_lava_portal.sql       # Phase 7A: LAVA applicant portal tables, RLS, grading + approval functions
 │   ├── 20261122100100_lava_seed_content.sql # Phase 7A: generated from content/lava/ (npm run build:lava-seed)
 │   ├── 20261123100000_lava_lesson_materials.sql # LAVA lesson videos & PDFs; training_resources.audience
-│   └── 20261124100000_lava_company_photos.sql # public lava-images bucket for pasted company photos
+│   ├── 20261124100000_lava_company_photos.sql # public lava-images bucket for pasted company photos
+│   └── 20261125100000_lava_longer_content.sql # sections and lessons up to 50,000 characters
 ├── content/lava/                            # course JSON, company drafts + simulator activities (portal.mjs), build-seed.mjs
 ├── functions/
 │   ├── _shared/cors.ts
 │   ├── admin-members/index.ts               # create / edit / activate / deactivate members, send emails
 │   ├── admin-members/deno.json
 │   └── .env.example                         # Edge Function secrets template
-├── setup/                                   # copy-paste SQL: create_admins, 1_enable_create_account, 2_lava_portal, 3_lava_lesson_materials, 4_lava_company_photos
+├── setup/                                   # copy-paste SQL: create_admins, 1_enable_create_account, 2_lava_portal, 3_lava_lesson_materials, 4_lava_company_photos, 5_lava_longer_content
 └── tests/                                   # `npm run test:db`: rls.test.mjs (194), lava.test.mjs (79), setup.test.mjs (15); pglite-supabase.mjs helper
 ```
 

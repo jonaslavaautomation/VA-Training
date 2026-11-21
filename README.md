@@ -126,6 +126,7 @@ Full steps: **[DEPLOYMENT_GUIDE.md §2–6](DEPLOYMENT_GUIDE.md)**. Details: [su
 | `20261122100100_lava_seed_content.sql` | LAVA starter content: 6 courses, quizzes, 3 simulator activities (generated) |
 | `20261123100000_lava_lesson_materials.sql` | LAVA lesson videos & PDFs (reuses Training Library storage; LAVA-only access) |
 | `20261124100000_lava_company_photos.sql` | paste photos into LAVA content (public `lava-images` bucket, admin-only writes) |
+| `20261125100000_lava_longer_content.sql` | LAVA sections and lessons up to 50,000 characters |
 
 3. **Storage buckets** are created by the migrations, all **private**:
 
@@ -139,7 +140,7 @@ Full steps: **[DEPLOYMENT_GUIDE.md §2–6](DEPLOYMENT_GUIDE.md)**. Details: [su
    The project-wide limit (Storage → Settings) also applies. **Free plan: 50 MB per file.**
 4. **Edge Function (optional):** `npx supabase functions deploy admin-members`, after setting the secrets above. Only needed for **Add member** by invitation, access emails and email changes.
 5. **Create account + member controls:** one copy-paste SQL script, no terminal. See [DEPLOYMENT_GUIDE.md §4b](DEPLOYMENT_GUIDE.md).
-   **LAVA applicant portal:** copy-paste `supabase/setup/2_lava_portal.sql`, then `3_lava_lesson_materials.sql` and `4_lava_company_photos.sql`. See [DEPLOYMENT_GUIDE.md §4c](DEPLOYMENT_GUIDE.md).
+   **LAVA applicant portal:** copy-paste `supabase/setup/2_lava_portal.sql`, then `3_lava_lesson_materials.sql`, `4_lava_company_photos.sql` and `5_lava_longer_content.sql`. See [DEPLOYMENT_GUIDE.md §4c](DEPLOYMENT_GUIDE.md).
 6. **Auth settings:**
    - turn **on** "Allow new users to sign up" (for the Create account page) and turn **off** "Confirm email" (new members get in right away);
    - password minimum 8 with letters and digits;
@@ -232,10 +233,10 @@ va-training-academy/
 ├── DEPLOYMENT_GUIDE.md · PRODUCTION_CHECKLIST.md · SECURITY_AUDIT.md · TEST_RESULTS.md
 ├── docs/SECURITY_CHECKLIST.md # Manual + API security tests
 ├── supabase/
-│   ├── migrations/            # 14 database migrations (apply in order)
+│   ├── migrations/            # 15 database migrations (apply in order)
 │   ├── content/lava/          # LAVA course content (JSON) + seed builder (npm run build:lava-seed)
 │   ├── functions/admin-members/   # Optional server function: add members by invitation, access emails
-│   ├── setup/                 # Copy-paste SQL: create_admins, 1_enable_create_account, 2_lava_portal, 3_lava_lesson_materials, 4_lava_company_photos
+│   ├── setup/                 # Copy-paste SQL: create_admins, 1_enable_create_account, 2_lava_portal, 3_lava_lesson_materials, 4_lava_company_photos, 5_lava_longer_content
 │   ├── tests/                 # npm run test:db (rls, lava, setup scripts)
 │   └── README.md              # Database, storage, email, limits
 ├── tests/e2e/                 # npm run test:e2e / test:responsive / test:lava
