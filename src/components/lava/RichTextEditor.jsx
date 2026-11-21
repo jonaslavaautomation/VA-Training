@@ -1,6 +1,6 @@
 import { useId, useLayoutEffect, useRef, useState } from 'react'
-import { Bold, Columns2, Eye, Heading2, Heading3, ImagePlus, Italic, Lightbulb, Link2, List, ListOrdered, Minus, PenLine, Underline } from 'lucide-react'
-import RichText from './RichText'
+import { Bold, Code2, Columns2, Eye, Film, Heading2, Heading3, ImagePlus, Italic, Lightbulb, Link2, List, ListOrdered, Minus, PenLine, Underline } from 'lucide-react'
+import RichText, { videoEmbedUrl, VideoEmbed } from './RichText'
 
 const isMac = typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform)
 const mod = isMac ? '⌘' : 'Ctrl+'
@@ -77,7 +77,7 @@ const Divider = () => <span className="mx-1 h-5 w-px bg-slate-200" aria-hidden="
  * `onPastePhoto(file) → Promise<url>` enables photos: paste (⌘V / Ctrl+V) or
  * drop an image and it is saved automatically and inserted at the cursor.
  */
-export default function RichTextEditor({ label, value, onChange, rows = 14, maxLength = 20000, hint, placeholder, onPastePhoto }) {
+export default function RichTextEditor({ label, value, onChange, rows = 14, maxLength = 20000, hint, placeholder, onPastePhoto, embeds = false }) {
   const id = useId()
   const ref = useRef(null)
   const valueRef = useRef(value)
@@ -85,6 +85,12 @@ export default function RichTextEditor({ label, value, onChange, rows = 14, maxL
   const [saving, setSaving] = useState(0)
   const [photoError, setPhotoError] = useState('')
   const [photoTip, setPhotoTip] = useState(false)
+  const [panel, setPanel] = useState(null) // 'video' | 'code' (embeds)
+  const [videoUrl, setVideoUrl] = useState('')
+  const [videoTitle, setVideoTitle] = useState('')
+  const [codeText, setCodeText] = useState('')
+  const [panelError, setPanelError] = useState('')
+  const caretRef = useRef(0)
 
   // The text box grows with its content (no inner scrollbar), so the dialog
   // scrolls as one page and the sticky toolbar stays reachable.
@@ -186,6 +192,43 @@ export default function RichTextEditor({ label, value, onChange, rows = 14, maxL
     addPhotos(files)
   }
 
+  /** Inserts a block on its own lines at the remembered cursor position. */
+  function insertBlock(block) {
+    const el = ref.current
+    if (!el) return
+    const at = Math.min(caretRef.current, el.value.length)
+    const before = el.value.slice(0, at)
+    const lead = !before || before.endsWith('\n\n') ? '' : before.endsWith('\n') ? '\n' : '\n\n'
+    const text = `${lead}${block}\n\n`
+    replaceRange(el, at, at, text, at + text.length, at + text.length)
+    if (window.matchMedia?.('(min-width: 768px)').matches && view === 'write') setView('split')
+  }
+
+  function openPanel(kind) {
+    if (ref.current) caretRef.current = ref.current.selectionStart
+    if (view === 'preview') setView('write')
+    setPanelError('')
+    setPanel((p) => (p === kind ? null : kind))
+  }
+
+  function insertVideo(e) {
+    e?.preventDefault()
+    const url = videoUrl.trim()
+    if (!videoEmbedUrl(url)) { setPanelError('Paste a full YouTube, Vimeo, Loom, Wistia or Google Drive video link (starting with https://).'); return }
+    const title = videoTitle.trim().replace(/[[\]]/g, '') || 'Video'
+    insertBlock(`@[${title}](${url})`)
+    setVideoUrl(''); setVideoTitle(''); setPanel(null)
+  }
+
+  function insertCode(e) {
+    e?.preventDefault()
+    const code = codeText.replace(/\r\n/g, '\n').trim()
+    if (!code) { setPanelError('Paste the code you want to add.'); return }
+    if (/^\s*:::\s*$/m.test(code)) { setPanelError('The code can’t contain a line with only “:::”.'); return }
+    insertBlock(`:::html\n${code}\n:::`)
+    setCodeText(''); setPanel(null)
+  }
+
   function onKeyDown(e) {
     if (!(e.metaKey || e.ctrlKey) || e.altKey) return
     const k = e.key.toLowerCase()
@@ -219,6 +262,8 @@ export default function RichTextEditor({ label, value, onChange, rows = 14, maxL
           <ToolButton label="Highlighted tip" icon={Lightbulb} onClick={run((el) => toggleLines(el, 'tip'))} />
           <ToolButton label="Divider line" icon={Minus} onClick={divider} />
           {onPastePhoto && <ToolButton label="How to add a photo" icon={ImagePlus} onClick={() => setPhotoTip((t) => !t)} active={photoTip} />}
+          {embeds && <ToolButton label="Add video" icon={Film} onClick={() => openPanel('video')} active={panel === 'video'} />}
+          {embeds && <ToolButton label="Add custom code" icon={Code2} onClick={() => openPanel('code')} active={panel === 'code'} />}
           <div className="ml-auto flex rounded-lg bg-white p-0.5 ring-1 ring-slate-200" role="tablist" aria-label="Editor view">
             {[['write', 'Write', PenLine], ['split', 'Split', Columns2], ['preview', 'Preview', Eye]].map(([v, text, Icon]) => (
               <button
@@ -253,6 +298,43 @@ export default function RichTextEditor({ label, value, onChange, rows = 14, maxL
           </form>
         )}
 
+        {panel === 'video' && (
+          <form onSubmit={insertVideo} className="space-y-3 border-t border-slate-200 bg-lava-50 p-3" aria-label="Add video">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
+              <label className="flex-[1.6] text-xs font-medium text-slate-600">
+                Video link
+                <input autoFocus value={videoUrl} onChange={(e) => { setVideoUrl(e.target.value); setPanelError('') }} placeholder="https://www.youtube.com/watch?v=…" className="mt-1 block h-9 w-full rounded-md border border-slate-200 bg-white px-2.5 text-sm" />
+              </label>
+              <label className="flex-1 text-xs font-medium text-slate-600">
+                Caption (optional)
+                <input value={videoTitle} onChange={(e) => setVideoTitle(e.target.value)} placeholder="e.g. A day at LAVA" className="mt-1 block h-9 w-full rounded-md border border-slate-200 bg-white px-2.5 text-sm" />
+              </label>
+              <div className="flex gap-2">
+                <button type="submit" className="h-9 rounded-md bg-lava-500 px-3 text-sm font-medium text-white hover:bg-lava-600">Insert video</button>
+                <button type="button" onClick={() => setPanel(null)} className="h-9 rounded-md px-3 text-sm font-medium text-slate-600 hover:bg-white">Cancel</button>
+              </div>
+            </div>
+            <p className="text-[11px] text-slate-500">Works with YouTube, Vimeo, Loom, Wistia and Google Drive (file shared with “Anyone with the link”).</p>
+            {panelError && <p className="text-xs text-red-600">{panelError}</p>}
+            {videoEmbedUrl(videoUrl.trim()) && <div className="max-w-md"><VideoEmbed src={videoUrl.trim()} title={videoTitle} /></div>}
+          </form>
+        )}
+
+        {panel === 'code' && (
+          <form onSubmit={insertCode} className="space-y-2 border-t border-slate-200 bg-lava-50 p-3" aria-label="Add custom code">
+            <label className="block text-xs font-medium text-slate-600">
+              Custom code (HTML, CSS, JavaScript embeds such as forms, booking widgets or maps)
+              <textarea autoFocus rows={6} value={codeText} onChange={(e) => { setCodeText(e.target.value); setPanelError('') }} spellCheck={false} placeholder={'<div style="padding:16px;background:#22212a;color:#fff;border-radius:12px">Hello from LAVA</div>'} className="mt-1 block w-full rounded-md border border-slate-200 bg-white px-2.5 py-2 font-mono text-[12px] leading-5" />
+            </label>
+            <p className="text-[11px] text-slate-500">Runs in a protected box on the page: it can show content and run its own scripts, but can’t access the rest of the portal or members’ accounts. Only paste code from sources you trust.</p>
+            {panelError && <p className="text-xs text-red-600">{panelError}</p>}
+            <div className="flex gap-2">
+              <button type="submit" className="h-9 rounded-md bg-lava-500 px-3 text-sm font-medium text-white hover:bg-lava-600">Insert code</button>
+              <button type="button" onClick={() => setPanel(null)} className="h-9 rounded-md px-3 text-sm font-medium text-slate-600 hover:bg-white">Cancel</button>
+            </div>
+          </form>
+        )}
+
         {photoTip && onPastePhoto && (
           <div className="flex items-start gap-3 border-t border-slate-200 bg-lava-50 px-4 py-3 text-sm text-navy-800" role="note">
             <ImagePlus className="mt-0.5 h-4 w-4 shrink-0 text-lava-500" />
@@ -277,6 +359,7 @@ export default function RichTextEditor({ label, value, onChange, rows = 14, maxL
               onChange={(e) => onChange(e.target.value)}
               onKeyDown={onKeyDown}
               onPaste={onPaste}
+              onSelect={(e) => { caretRef.current = e.currentTarget.selectionStart }}
               onDrop={onDrop}
               onDragOver={(e) => { if (onPastePhoto && [...(e.dataTransfer?.items ?? [])].some((it) => it.type.startsWith('image/'))) e.preventDefault() }}
               placeholder={placeholder}

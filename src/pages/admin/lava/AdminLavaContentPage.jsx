@@ -20,7 +20,7 @@ const WHERE = {
   niches: 'About LAVA page', clients: 'About LAVA page', work_arrangement: 'Reference text (the 45-day notice is also built into every LAVA page)', agreement_intro: 'Agreement page introduction',
 }
 // [placeholder] text left from the drafts — but not [link text](https://…).
-const hasPlaceholders = (body) => /\[[^\]\n]+\](?!\()|DRAFT FOR ADMINISTRATOR REVIEW/.test(body)
+const hasPlaceholders = (body) => /\[[^\]\n]+\](?!\()|DRAFT FOR ADMINISTRATOR REVIEW/.test(body.replace(/^\s*:::(html|code)\s*$[\s\S]*?^\s*:::\s*$/gim, ''))
 
 // The six company sections shown on the About LAVA page (they can be deleted and added back).
 const COMPANY_SECTIONS = [
@@ -58,7 +58,7 @@ function ContentModal({ row, onClose, onSaved }) {
       <div className="space-y-4">
         {error && <Alert type="error">{error}</Alert>}
         <Input label="Title" maxLength={120} value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} />
-        <RichTextEditor label="Content" rows={16} maxLength={20000} onPastePhoto={savePastedPhoto} value={form.body} onChange={(body) => setForm((f) => ({ ...f, body }))} />
+        <RichTextEditor label="Content" rows={16} maxLength={20000} onPastePhoto={savePastedPhoto} embeds value={form.body} onChange={(body) => setForm((f) => ({ ...f, body }))} />
         <Select label="Visibility" value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })} options={[['draft', 'Draft: only admins can see it'], ['published', 'Published: visible to members']]} />
         {publishingPlaceholders && <Alert type="error">This text still contains [placeholders] or the draft note. Replace them with verified information before publishing.</Alert>}
       </div>

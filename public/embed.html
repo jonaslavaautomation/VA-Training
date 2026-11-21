@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="robots" content="noindex, nofollow" />
+  <title>Embedded content</title>
+  <!--
+    Sandbox page for admin "Custom code" blocks in LAVA content.
+    It is only ever loaded inside <iframe sandbox="allow-scripts …"> WITHOUT
+    allow-same-origin, so it runs in an opaque origin: code here cannot read
+    the app's pages, cookies or login session. vercel.json gives this file its
+    own Content-Security-Policy (scripts allowed) and allows framing only by
+    this site.
+  -->
+  <style>
+    html, body { margin: 0; padding: 0; background: transparent; }
+    body { font-family: "Poppins", ui-sans-serif, system-ui, sans-serif; color: #334155; font-size: 15px; line-height: 1.6; overflow: hidden; }
+    img, video, iframe { max-width: 100%; }
+    #root { padding: 2px; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  <script>
+    (function () {
+      var root = document.getElementById('root')
+      var token = null
+      function report() {
+        if (!token) return
+        var h = Math.ceil(Math.max(document.documentElement.scrollHeight, document.body.scrollHeight, root.getBoundingClientRect().height + 4))
+        parent.postMessage({ type: 'lava-embed-height', token: token, height: h }, '*')
+      }
+      window.addEventListener('message', function (e) {
+        if (e.source !== parent || !e.data || e.data.type !== 'lava-embed-code' || token) return
+        token = e.data.token
+        // createContextualFragment makes <script> tags in the snippet run when inserted.
+        var frag = document.createRange().createContextualFragment(String(e.data.html || ''))
+        root.appendChild(frag)
+        report()
+        if (window.ResizeObserver) new ResizeObserver(report).observe(document.body)
+        window.addEventListener('load', report)
+        setTimeout(report, 300); setTimeout(report, 1500); setTimeout(report, 4000)
+      })
+      parent.postMessage({ type: 'lava-embed-ready' }, '*')
+    })()
+  </script>
+</body>
+</html>

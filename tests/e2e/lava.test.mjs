@@ -211,6 +211,37 @@ try {
     assert((await editor.inputValue()).includes('**Paragraph 80**'), 'bold from pinned toolbar failed')
     await admin.getByRole('dialog').getByRole('button', { name: 'Cancel' }).click()
   })
+  await step('A2e', 'Admin adds a video and custom code to a section from the toolbar, then publishes it', async () => {
+    await admin.getByRole('button', { name: 'Edit What Does LAVA Do?' }).click()
+    const editor = admin.getByLabel('Content')
+    await editor.fill('We support insurance agencies with trained virtual assistants.')
+    await editor.evaluate((el) => { el.focus(); el.setSelectionRange(el.value.length, el.value.length) })
+    await admin.getByRole('button', { name: 'Add video' }).click()
+    await admin.getByLabel('Video link').fill('https://vimeo.com/notavideo')
+    await admin.getByRole('button', { name: 'Insert video' }).click()
+    await text(admin, 'Paste a full YouTube, Vimeo')
+    await admin.getByLabel('Video link').fill('https://www.youtube.com/watch?v=dQw4w9WgXcQ')
+    await admin.getByLabel('Caption (optional)').fill('A day at LAVA')
+    await admin.getByRole('dialog').getByTestId('video-embed').first().waitFor() // live preview in the panel
+    await admin.getByRole('button', { name: 'Insert video' }).click()
+    await admin.getByRole('button', { name: 'Add custom code' }).click()
+    await admin.getByLabel(/^Custom code/).fill(`<div id="out" style="padding:12px;background:#22212a;color:#fff">waiting</div>
+<script>
+var t = 'Script ran'
+try { parent.document.title; t += ' / NOT isolated' } catch (e) { t += ' / isolated' }
+try { localStorage.getItem('x'); t += ' / storage open' } catch (e) { t += ' / no storage' }
+var arr = [1, 2]; document.getElementById('out').textContent = t + ' / ' + arr[0]
+</script>`)
+    await admin.getByRole('button', { name: 'Insert code' }).click()
+    const body = await editor.inputValue()
+    assert(body.includes('@[A day at LAVA](https://www.youtube.com/watch?v=dQw4w9WgXcQ)') && /:::html\n<div id="out"[\s\S]*<\/script>\n:::/.test(body), body)
+    await admin.getByLabel('Visibility').selectOption('published')
+    assert(!(await admin.getByText(/still contains \[placeholders\]|Replace them with verified/).count()), 'code brackets flagged as placeholders')
+    await admin.getByRole('dialog').getByRole('button', { name: 'Save' }).click()
+    await text(admin, 'Section saved.')
+    const row = admin.getByTestId('content-row').filter({ hasText: 'What Does LAVA Do?' })
+    assert(!(await row.getByText('Needs review').count()), 'custom code flagged as needing review')
+  })
   await step('A3', 'Admin adds a position with confirmed salary and publishes it as hiring', async () => {
     await admin.goto(`${BASE}/admin/lava/positions`)
     await text(admin, 'No positions yet')
@@ -302,6 +333,21 @@ try {
     await maria.waitForFunction(() => [...document.querySelectorAll('[data-testid=lava-section-mission_vision] img')].every((i) => i.complete && i.naturalWidth > 0), null, { timeout: 15000 })
     const widths = await gallery.locator('img').evaluateAll((imgs) => imgs.map((i) => i.naturalWidth))
     assert(widths.length === 2 && widths[0] === 1600 && widths[1] === 800, `widths ${widths}`)
+  })
+  await step('4c', 'Member sees the video player and the custom code running in an isolated box', async () => {
+    const sec = maria.getByTestId('lava-section-services')
+    const video = sec.getByTestId('video-embed').locator('iframe')
+    assert(await video.getAttribute('src') === 'https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ', 'video src')
+    await text(maria, 'A day at LAVA')
+    const frame = sec.getByTestId('custom-code')
+    const sandbox = await frame.getAttribute('sandbox')
+    assert(/allow-scripts/.test(sandbox) && !/allow-same-origin/.test(sandbox), `sandbox ${sandbox}`)
+    await maria.frameLocator('[data-testid=lava-section-services] [data-testid=custom-code]').getByText('Script ran / isolated / no storage / 1').waitFor({ timeout: 15000 })
+    await maria.waitForFunction(() => document.querySelector('[data-testid=lava-section-services] [data-testid=custom-code]').getBoundingClientRect().height >= 40, null, { timeout: 10000 })
+    const res = await fetch(`${BASE}/embed.html`)
+    assert(/frame-ancestors 'self'/.test(res.headers.get('content-security-policy')) && res.headers.get('x-frame-options') === 'SAMEORIGIN', 'embed headers')
+    const main = await fetch(`${BASE}/lava-portal`)
+    assert(/script-src 'self';/.test(main.headers.get('content-security-policy')) && main.headers.get('x-frame-options') === 'DENY', 'main CSP weakened')
   })
   await step(5, 'Member explores the hiring opportunities', async () => {
     await maria.getByRole('link', { name: 'Careers' }).click()
